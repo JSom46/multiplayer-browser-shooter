@@ -12,7 +12,7 @@ export const vectorAngle = (x, y) => {
         return Math.atan(y / x) + Math.PI;
     }
     // third quadrant
-    if(x <= 0 && y <= 0){
+    if(x < 0 && y <= 0){
         return Math.atan(y / x) + Math.PI;
     }
     // fourth quadrant

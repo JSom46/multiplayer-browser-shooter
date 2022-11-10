@@ -10,11 +10,13 @@ export class Painter{
             x: this.app.screen.width * 0.5,
             y: this.app.screen.height * 0.5
         };
+        this.tiles = [];
+        this.sprites = new Set();
     }
 
     setMap(map){
         this.map = map;
-        this.tiles = [];
+        
         
         for(let y = 0; y < this.map.tileRows; y++){
             for(let x = 0; x < this.map.tileColumns; x++){
@@ -52,6 +54,7 @@ export class Painter{
         this.cameraCenter = object;
     }
 
+    // adds selected layer of map to the stage
     drawLayer(layeridx){
         const map = new PIXI.Container();
         const layer = this.map.tileMap[layeridx];
@@ -67,12 +70,14 @@ export class Painter{
         this.stage.addChild(map)
     }
 
+    // adds or updates players' sprites to the stage
     drawPlayers(){
         this.players.forEach(p => {
             if(p.sprite == undefined){
                 const playerSprite = new PIXI.Sprite(p.texture == undefined ? this.defaultPlayerTexture : p.texture);
                 playerSprite.anchor.set(0.5, 0.5);
                 p.sprite = playerSprite;
+                this.sprites.add(playerSprite)
                 this.stage.addChild(playerSprite);
             }
 
@@ -82,12 +87,14 @@ export class Painter{
         });
     }
 
+    // adds or updates projectiles' sprites to the stage
     drawProjectiles(){
         this.projectiles.forEach(p => {
             if(p.sprite == undefined){
                 const projectileSprite = new PIXI.Sprite(p.texture == undefined ? this.defaultProjectileTexture : p.texture);
                 projectileSprite.anchor.set(0.5, 0.5);
                 p.sprite = projectileSprite;
+                this.sprites.add(projectileSprite);
                 this.stage.addChild(projectileSprite);
                 p.sprite.rotation = p.rotation;
             }
@@ -97,6 +104,31 @@ export class Painter{
         });
     }
 
+    // deletes sprites that aren't bound to any existing player or projectile
+    deleteUnusedSprites(){
+        // set containing sprites in use
+        const  spritesInUse = new Set();
+
+        // add players' sprites
+        this.players.forEach(p => {
+            spritesInUse.add(p.sprite);
+        });
+
+        // add projectiles' sprites
+        this.projectiles.forEach(p => {
+            spritesInUse.add(p.sprite);
+        });
+
+        // delete unused sprites from the stage
+        this.sprites.forEach(s => {
+            if(!spritesInUse.has(s)){
+                this.stage.removeChild(s);
+                this.sprites.delete(s);
+            }
+        });
+    }
+
+    // initializes stage with map, players and projectiles
     draw(){
         this.drawLayer(0);
         this.drawLayer(1);
@@ -106,10 +138,12 @@ export class Painter{
         this.drawLayer(3);
     }
 
+    // updates location of sprites
     update(){
         const x = 0.5 * this.app.screen.width - this.cameraCenter.x;
         const y = 0.5 * this.app.screen.height - this.cameraCenter.y;
 
+        this.deleteUnusedSprites();
         this.drawPlayers();
         this.drawProjectiles();
 

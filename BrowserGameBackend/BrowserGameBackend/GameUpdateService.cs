@@ -11,7 +11,8 @@ namespace BrowserGameBackend
         private readonly IGameData _gameData;
         private readonly IMapData _mapData;
         private readonly IHubContext<GameHub> _hubContext;
-        private readonly PeriodicTimer _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(33));
+        private int _tick = 33;
+        private readonly PeriodicTimer _timer;
         private long _lastTick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         private readonly double _playerHitboxRadius = 0.4;
         private readonly double _projectileHitboxRadius = 0.25;
@@ -21,6 +22,7 @@ namespace BrowserGameBackend
             _gameData = gameData;
             _mapData = mapData;
             _hubContext = hubContext;
+            _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_tick));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -43,162 +45,207 @@ namespace BrowserGameBackend
                         game.Projectiles[i].X += game.Projectiles[i].SX * deltaTime;
                         game.Projectiles[i].Y += game.Projectiles[i].SY * deltaTime;
 
-                        // remove projectile if it is outside of map boundries
-                        if (game.Projectiles[i].X > map.Width * map.TileWidth ||
-                            game.Projectiles[i].Y > map.Height * map.TileHeight || 
-                            game.Projectiles[i].X < 0 || game.Projectiles[i].Y < 0)
+                        // check if projectile is inside map's boundries
+                        if (game.Projectiles[i].X <= map.Width * map.TileWidth &&
+                            game.Projectiles[i].Y <= map.Height * map.TileHeight && 
+                            game.Projectiles[i].X >= 0 && game.Projectiles[i].Y >= 0 &&
+                            map.CanBeShotThrough[(int)(game.Projectiles[i].Y / map.TileHeight)][(int)(game.Projectiles[i].X / map.TileWidth)])
                         {
-                            deletedProjectiles.Add(game.Projectiles[i].Id);
-                            game.Projectiles.Remove(game.Projectiles[i]);
                             continue;
                         }
 
-                        try
-                        {
-                            // remove projectile if it hits an obstacle
-                            if (!map.CanBeShotThrough[(int)Math.Floor(game.Projectiles[i].Y / map.TileHeight)][
-                                    (int)Math.Floor(game.Projectiles[i].X / map.TileWidth)])
-                            {
-                                game.Projectiles.Remove(game.Projectiles[i]);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("mapy: map");
-                            Console.WriteLine("y: " + (int)Math.Floor(game.Projectiles[i].X / map.TileWidth) + " x: " + (int)Math.Floor(game.Projectiles[i].Y / map.TileHeight));
-                            Console.WriteLine(e.ToString());
-                        }
-                        
+                        // projectile is outside of map's boundries - delete it
+                        deletedProjectiles.Add(game.Projectiles[i].Id);
+                        game.Projectiles.Remove(game.Projectiles[i]);
                     }
                     
                     // update state of each player in game
                     foreach (var player in game.Players)
                     {
-                        var movementDirection = player.LastMovementDirection;
-                        var lastActionTimeStamp = _lastTick;
-
-                        //foreach (var action in player.Moves)
-                        while(player.Moves.TryDequeue(out var action))
+                        var dx = 0d;
+                        var dy = 0d;
+                        long timeSinceLastAction;
+                        // process all enqueued actions 
+                        while (player.Moves.TryDequeue(out var action))
                         {
-                            var timeSinceLastAction = action.Timestamp - lastActionTimeStamp;
+                            // time between previously and currently processed action
+                            timeSinceLastAction = action.Timestamp - player.LastStateUpdate;
 
-                            // move player TODO needs to be changed - player is not a single point
-                            var newX = player.X; 
-                            var newY = player.Y;
-                            switch (movementDirection)
+                            // process movement
+                            switch (player.LastMovementDirection)
                             {
-                                // upper-left
+                                // upper - left
                                 case 0:
                                 {
-                                    newX -= player.MovementSpeed * timeSinceLastAction;
-                                    newY -= player.MovementSpeed * timeSinceLastAction;
+                                    dx = -player.MovementSpeed * timeSinceLastAction;
+                                    dy = -player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
                                 // up
                                 case 1:
                                 {
-                                    newY -= player.MovementSpeed * timeSinceLastAction;
+                                    dy = -player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
-                                // upper-right
+                                // upper - right
                                 case 2:
                                 {
-                                    newX += player.MovementSpeed * timeSinceLastAction;
-                                    newY -= player.MovementSpeed * timeSinceLastAction;
+                                    dx = player.MovementSpeed * timeSinceLastAction;
+                                    dy = -player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
                                 // left
                                 case 3:
                                 {
-                                    newX -= player.MovementSpeed * timeSinceLastAction;
+                                    dx = -player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
                                 // right
                                 case 5:
                                 {
-                                    newX += player.MovementSpeed * timeSinceLastAction;
+                                    dx = player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
-                                // bottom-left
+                                // bottom - left
                                 case 6:
                                 {
-                                    newX -= player.MovementSpeed * timeSinceLastAction;
-                                    newY += player.MovementSpeed * timeSinceLastAction;
+                                    dx = -player.MovementSpeed * timeSinceLastAction;
+                                    dy = player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
-                                // down
+                                // bottom
                                 case 7:
                                 {
-                                    newY += player.MovementSpeed * timeSinceLastAction;
+                                    dy = player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
-                                // bottom-right
+                                // bottom - right
                                 case 8:
                                 {
-                                    newX += player.MovementSpeed * timeSinceLastAction;
-                                    newY += player.MovementSpeed * timeSinceLastAction;
+                                    dx = player.MovementSpeed * timeSinceLastAction;
+                                    dy = player.MovementSpeed * timeSinceLastAction;
                                     break;
                                 }
                             }
-                            /*if (map.IsTraversable[(int)Math.Floor(newX / map.TileWidth)][(int)Math.Floor(newY / map.TileHeight)])
-                            {
-                                player.X = newX;
-                                player.Y = newY;
-                            }*/
 
-                            // change movement direction if it was specified in action
-                            if (action.MovementDirection != null)
-                            {
-                                movementDirection = (int)action.MovementDirection;
-                            }
+                            // change players movement direction
+                            player.LastMovementDirection = action.MovementDirection;
 
-                            // change player's rotation if it was specified in action
-                            if (action.R != null)
-                            {
-                                player.R = (double)action.R;
-                            }
+                            // change players rotation
+                            player.R = action.R;
 
-                            // if other action was specified, execute it
-                            if (action.Action == 0) {
-                                // action == shoot
-                                var projectile = new ProjectileModel()
+                                // execute action if it's been defined in action (I'm bad at naming stuff)
+                            if (action.Action != null)
+                            {
+                                switch (action.Action)
                                 {
-                                    Id = game.NextProjectileId++,
-                                    PId = player.Id,
-                                    X = player.X,
-                                    Y = player.Y,
-                                    SX = player.ProjectilesSpeed * Math.Sin(player.R),
-                                    SY = player.ProjectilesSpeed * -Math.Cos(player.R)
-                                };
-                                game.Projectiles.Add(projectile);
-                                newProjectiles.Add(projectile);
+                                    // shoot
+                                    case 0:
+                                    {
+                                        var proj = new ProjectileModel()
+                                        {
+                                            Id = game.NextProjectileId++,
+                                            PId = player.Id,
+                                            X = player.X,
+                                            Y = player.Y,
+                                            SX = player.ProjectilesSpeed * Math.Sin(player.R + Math.PI * 0.5),
+                                            SY = player.ProjectilesSpeed * -Math.Cos(player.R + Math.PI * 0.5)
+                                        };
+
+                                        newProjectiles.Add(proj);
+                                        game.Projectiles.Add(proj);
+
+                                        break;
+                                    }
+                                }
                             }
 
-                            lastActionTimeStamp = action.Timestamp;
+                            // update player's position
+                            player.X += dx;
+                            player.Y += dy;
 
-                            // action was added after current tick has been started - leave loop
-                            if (now - action.Timestamp < 0)
-                            {
-                                break;
-                            }
+                            dx = 0d;
+                            dy = 0d;
+
+                            // update player's last update timestamp
+                            player.LastStateUpdate = action.Timestamp;
                         }
 
-                        player.LastMovementDirection = movementDirection;
+                        // process movement between last action timestamp and now
+                        timeSinceLastAction = now - player.LastStateUpdate;
+                        dx = 0d;
+                        dy = 0d;
 
-                        // check if player got hit
-                        foreach (var proj in game.Projectiles)
+                        switch (player.LastMovementDirection)
                         {
-                            var dx = proj.X - player.X;
-                            var dy = proj.Y - player.Y;
-
-                            if (Math.Sqrt(dx * dx + dy * dy) < _playerHitboxRadius + _projectileHitboxRadius)
+                            // upper - left
+                            case 0:
                             {
-                                // TODO handle death of player
+                                dx = -player.MovementSpeed * timeSinceLastAction;
+                                dy = -player.MovementSpeed * timeSinceLastAction;
+                                break;
+                            }
+                            // up
+                            case 1:
+                            {
+                                dy = -player.MovementSpeed * timeSinceLastAction;
+                                break;
+                            }
+                            // upper - right
+                            case 2:
+                            {
+                                dx = player.MovementSpeed * timeSinceLastAction;
+                                dy = -player.MovementSpeed * timeSinceLastAction;
+                                break;
+                            }
+                            // left
+                            case 3:
+                            {
+                                dx = -player.MovementSpeed * timeSinceLastAction;
+                                break;
+                            }
+                            // right
+                            case 5:
+                            {
+                                dx = player.MovementSpeed * timeSinceLastAction;
+                                break;
+                            }
+                            // bottom - left
+                            case 6:
+                            {
+                                dx = -player.MovementSpeed * timeSinceLastAction;
+                                dy = player.MovementSpeed * timeSinceLastAction;
+                                break;
+                            }
+                            // bottom
+                            case 7:
+                            {
+                                dy = player.MovementSpeed * timeSinceLastAction;
+                                break;
+                            }
+                            // bottom - right
+                            case 8:
+                            {
+                                dx = player.MovementSpeed * timeSinceLastAction;
+                                dy = player.MovementSpeed * timeSinceLastAction;
                                 break;
                             }
                         }
+
+                        // update player's position
+                        player.X += dx;
+                        player.Y += dy;
+
+                        // update player's last update timestamp
+                        player.LastStateUpdate = now;
                     }
-                    // TODO send to every player in game updated state
+
+                    // check if any player got hit by projectile
+                    for (var i = game.Projectiles.Count - 1; i >= 0; --i)
+                    {
+                        
+                    }
+
                     await _hubContext.Clients.Group(game.Id.ToString()).SendAsync("serverTick", new GameState()
                     {
                         DeletedProjectiles = deletedProjectiles,

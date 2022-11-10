@@ -22,7 +22,7 @@ namespace BrowserGameBackend.Hubs
             return base.OnConnectedAsync();
         }
 
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override async Task<Task> OnDisconnectedAsync(Exception? exception)
         {
             // check if player was in any game
             var game = _games.GetByPlayerId(Context.ConnectionId);
@@ -40,6 +40,7 @@ namespace BrowserGameBackend.Hubs
                 _games.DeleteGame(game.Id);
             }
 
+            await Clients.Group(game.Id.ToString()).SendAsync("playerLeft", Context.ConnectionId);
             return base.OnDisconnectedAsync(exception);
         }
 
@@ -70,6 +71,7 @@ namespace BrowserGameBackend.Hubs
                 Name = data.PlayerName,
                 X = 0,
                 Y = 0,
+                LastStateUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             }, gameId);
 
             // create game's group and add player to it
@@ -136,7 +138,8 @@ namespace BrowserGameBackend.Hubs
                 Id = Context.ConnectionId,
                 Name = playerName,
                 X = 0,
-                Y = 0
+                Y = 0,
+                LastStateUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             };
             _games.AddPlayer(player, gameId);
 
@@ -212,13 +215,8 @@ namespace BrowserGameBackend.Hubs
             await Clients.Caller.SendAsync("gameLeft");
         }
 
-        public void UpdateState(int? movementDirection, double? rotation, int? action)
+        public void UpdateState(int movementDirection, double rotation, int? action)
         {
-            if (movementDirection == null && rotation == null && action == null)
-            {
-                return;
-            }
-
             var player = _games.GetPlayerById(Context.ConnectionId);
 
             if (player == null)

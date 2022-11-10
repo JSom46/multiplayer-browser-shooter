@@ -39,11 +39,6 @@ if(params.get("action") == "create"){
 const client = players.find(p => p.id == con.connectionId);
 client.lastUpdate = performance.now();
 
-await con.updateState({
-    movementDirection: 5,
-    rotation: 0.69,
-})
-
 const app = new PIXI.Application({
     width: 840,
     height: 640,
@@ -140,28 +135,31 @@ app.stage.interactive = true;
 
 app.stage.on("pointermove", e => {
     client.rotation = vectorAngle(e.data.global.x - app.screen.width * 0.5, e.data.global.y - app.screen.height * 0.5);
-    con.updateState({rotation: client.rotation});
 });
 
 app.stage.on("pointerdown", e => {
-    console.log(projectiles);
-    projectiles.push(new Projectile({
+    /*projectiles.push(new Projectile({
+        id: 1,
         pId: client.id, 
         sx: client.projectilesSpeed * Math.sin(client.rotation + Math.PI * 0.5) * 10, 
         sy: client.projectilesSpeed * (-Math.cos(client.rotation + Math.PI * 0.5)) * 10, 
         x: client.x, 
         y: client.y
-    }));
-    con.updateState({action: 0});
+    }));*/
+
+    con.updateState({movementDirection: movementDirection(movX, movY), action: 0});
 });
 
 app.ticker.add(delta => {
-    client.x += movX * delta * 5;
-    client.y += movY * delta * 5;
+    con.updateState({movementDirection: movementDirection(movX, movY)});
 
-    projectiles.forEach(p => {
+    for(let i = projectiles.length - 1; i >= 0; --i){
+        const p = projectiles[i];
         p.x += p.velocityX * delta;
         p.y += p.velocityY * delta;
-    })
+        if(p.x < 0 || p.y < 0 || p.x > map.width * map.tileWidth || p.y > map.height * map.tileHeight){
+            projectiles.splice(i, 1);
+        }
+    }
     painter.update();
 });

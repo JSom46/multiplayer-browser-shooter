@@ -25,6 +25,7 @@ namespace BrowserGameBackend.Data
 
             game.Projectiles.Add(new ProjectileModel()
             {
+                Id = game.NextProjectileId++,
                 PId = "xd",
                 SX = 0.3,
                 SY = 0.4,
@@ -44,7 +45,8 @@ namespace BrowserGameBackend.Data
                 MovementSpeed = 0.064,
                 Moves = new Queue<PlayerActionModel>(),
                 Name = "dominator",
-                ProjectilesSpeed = 69
+                ProjectilesSpeed = 69,
+                LastStateUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             }, game.Id);
         }
 

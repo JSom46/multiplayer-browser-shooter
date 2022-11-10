@@ -11,7 +11,7 @@
         /// 3 - left, 4 - no movement, 5 - right
         /// 4 - bottom-left, 5 - down, 6 - bottom-right
         /// </summary>
-        public int? MovementDirection;
+        public int MovementDirection;
 
         /// <summary>
         /// action other than moving or rotating taken by player
@@ -22,14 +22,14 @@
         /// <summary>
         /// Player's rotation in radians
         /// </summary>
-        public double? R;
+        public double R;
 
         /// <summary>
         /// Time at which movement has been recorded unix time milliseconds
         /// </summary>
         public long Timestamp;
 
-        public PlayerActionModel(long timeStamp, int? movementDirection, double? r, int? action)
+        public PlayerActionModel(long timeStamp, int movementDirection, double r, int? action)
         {
             MovementDirection = movementDirection;
             R = r;

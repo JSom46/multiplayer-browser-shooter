@@ -76,5 +76,5 @@ document.getElementById("playerName").addEventListener("change", () => {
 
 // redirect to /game page where game will be joined
 document.getElementById("joinGame").addEventListener("click", () => {
-        window.location.href = `/game.html?action=join&playerName=${joinOptions.playerName}&gameId=${joinOptions.game}`;
+        window.location.href = `/game.html?action=join&playerName=${joinOptions.playerName}&gameId=${joinOptions.game}&map=${joinOptions.map}`;
 })

@@ -24,6 +24,40 @@ export class Connection{
         this.connectionId = this.con.connectionId;
     }
 
+    handleTick = (state) => {
+        state.players.forEach(p => {
+            const player = this.players.find(e => e.id === p.id);
+            if(player === undefined){
+                console.log("plejerunio");
+                return;
+            }
+            player.x = p.x;
+            player.y = p.y;
+            player.rotation = p.r;
+        });
+        state.newProjectiles.forEach(p => {
+            console.log(p);
+            const proj = new Projectile({
+                id: p.id,
+                pId: p.pId,
+                sx: p.sx,
+                sy: p.sy,
+                x: p.x,
+                y: p.y
+            });
+            console.log(proj);
+            this.projectiles.push(proj);
+        });
+    }
+
+    handlePlayerJoin = (player) => {
+        this.players.push(new Player(player));
+    }
+
+    handlePlayerLeave = (playerId) => {
+        this.players.splice(this.players.findIndex(p => p.id === playerId), 1)
+    }
+
     async joinGame(gameId, playerName){
         return new Promise((resolve, reject) => {
             this.con.on("gameJoined", state => {    
@@ -35,12 +69,11 @@ export class Connection{
                     this.projectiles.push(new Projectile(p));
                 });
 
-                this.con.on("serverTick", (state) => {
-                    //console.log(state);
-                    if(state.deletedProjectiles.length > 0){
-                        console.log(state);
-                    }
-                })
+                this.client = this.players.find(p => p.id === this.con.connectionId);
+
+                this.con.on("serverTick", this.handleTick);
+                this.con.on("playerJoined", this.handlePlayerJoin);
+                this.con.on("playerLeft", this.handlePlayerLeave);
 
                 resolve();
             });
@@ -51,11 +84,11 @@ export class Connection{
                     document.location.href = "/join.html";
                 }, 2000);
 
-                reject();
+                reject("Could not join");
             });
             
             this.con.invoke("JoinRoom", gameId, playerName)
-            .catch(err => reject());
+            .catch(err => reject(err));
         })
     }
 
@@ -70,12 +103,9 @@ export class Connection{
                     this.projectiles.push(new Projectile(p));
                 });
 
-                this.con.on("serverTick", (state) => {
-                    //console.log(state);
-                    if(state.deletedProjectiles.length > 0){
-                        console.log(state);
-                    }
-                })
+                this.client = this.players.find(p => p.id === this.con.connectionId);
+
+                this.con.on("serverTick", this.handleTick)
 
                 resolve();
             });
@@ -99,19 +129,15 @@ export class Connection{
     // 0 - upper-left, 1 - up, 2 - upper-right
     // 3 - left, 4 - no movement, 5 - right
     // 4 - bottom-left, 5 - down, 6 - bottom-right
-    // rotation is player's rotation in radians
     // action is an enum containing information about other player's actions, where
     // 0 - shot
     async updateState(state){
-        if(state.movementDirection == undefined && state.rotation == undefined && state.action == undefined){
-            return;
-        }
-
-        if(performance.now - this.lastUpdate < 5 && state.movementDirection == undefined && state.action == undefined){
+        if(performance.now - this.lastUpdate < 10 && state.movementDirection == undefined && state.action == undefined){
             return;
         }
         
-        await this.con.invoke("UpdateState", state.movementDirection, state.rotation, state.action);
+        this.lastUpdate = performance.now;
+        await this.con.invoke("UpdateState", state.movementDirection, this.client.rotation, state.action);
     }
 
     setPlayers(playerArr){
