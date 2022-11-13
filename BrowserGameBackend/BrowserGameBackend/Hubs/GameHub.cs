@@ -18,7 +18,6 @@ namespace BrowserGameBackend.Hubs
 
         public override Task OnConnectedAsync()
         {
-            Console.WriteLine("hello " + Context.ConnectionId);
             return base.OnConnectedAsync();
         }
 
@@ -223,7 +222,6 @@ namespace BrowserGameBackend.Hubs
             {
                 return;
             }
-
             player.Moves.Enqueue(new PlayerActionModel(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), movementDirection, rotation, action));
         }
     }

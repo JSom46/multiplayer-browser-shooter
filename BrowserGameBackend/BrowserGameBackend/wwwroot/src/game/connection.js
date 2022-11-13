@@ -27,16 +27,18 @@ export class Connection{
     handleTick = (state) => {
         state.players.forEach(p => {
             const player = this.players.find(e => e.id === p.id);
-            if(player === undefined){
-                console.log("plejerunio");
-                return;
+            if(player !== undefined){
+                player.x = p.x;
+                player.y = p.y;
+                player.rotation = p.r;
             }
-            player.x = p.x;
-            player.y = p.y;
-            player.rotation = p.r;
         });
+
+        state.deletedProjectiles.forEach(p => {
+            this.projectiles.splice(this.projectiles.findIndex(e => e.id === p.id), 1);
+        });
+
         state.newProjectiles.forEach(p => {
-            console.log(p);
             const proj = new Projectile({
                 id: p.id,
                 pId: p.pId,
@@ -45,7 +47,6 @@ export class Connection{
                 x: p.x,
                 y: p.y
             });
-            console.log(proj);
             this.projectiles.push(proj);
         });
     }

@@ -4,31 +4,25 @@ namespace BrowserGameBackend.Data;
 
 public interface IGameData
 {
-    /// <summary>
-    /// Returns list of all games
-    /// </summary>
-    /// <returns></returns>
     List<GameModel> GetAll();
 
-    /// <summary>
-    /// Return game with specified id or null, if such game does not exist
-    /// </summary>
-    /// <param name="id">Id of game</param>
-    /// <returns></returns>
+    /// <param name="id"></param>
+    /// <returns>Return game with specified id or null, if such game does not exist</returns>
     GameModel? GetById(Guid id);
 
-    /// <summary>
-    /// Return game played by player with specified id or null, if such game does not exist
-    /// </summary>
-    /// <param name="id">Id of player</param>
-    /// <returns></returns>
+    /// <param name="id"></param>
+    /// <returns>Return game played by player with specified id or null, if such game does not exist</returns>
     GameModel? GetByPlayerId(string id);
-    /// <summary>
-    /// Returns player with specified id or null, if such player does not exist
-    /// </summary>
-    /// <param name="Id">Id of player</param>
-    /// <returns></returns>
+
+    /// <param name="Id"></param>
+    /// <returns>Returns player with specified id or null, if such player does not exist</returns>
     PlayerModel? GetPlayerById(string Id);
+
+    /// <summary>
+    /// Adds game
+    /// </summary>
+    /// <param name="game"></param>
+    /// <returns>true on success, false otherwise</returns>
     bool AddGame(GameModel game);
 
     /// <summary>
@@ -47,7 +41,7 @@ public interface IGameData
     int DeleteGame(Guid id);
 
     /// <summary>
-    /// Delete player with specified id from game with specified id
+    /// Delete player with specified id
     /// </summary>
     /// <param name="playerId">Id of the player to delete</param>
     /// <returns>0 on success, negative number in other case</returns>

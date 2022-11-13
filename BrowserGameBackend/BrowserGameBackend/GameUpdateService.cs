@@ -11,11 +11,12 @@ namespace BrowserGameBackend
         private readonly IGameData _gameData;
         private readonly IMapData _mapData;
         private readonly IHubContext<GameHub> _hubContext;
-        private int _tick = 33;
+        private int _tick = 17;
         private readonly PeriodicTimer _timer;
         private long _lastTick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        private readonly double _playerHitboxRadius = 0.4;
-        private readonly double _projectileHitboxRadius = 0.25;
+        private readonly double _playerHitboxRadius = 0.4 * 32;
+        private readonly double _projectileHitboxRadius = 0.25 * 32;
+        private readonly double _epsilon = 0.00001;
 
         public GameUpdateService(IGameData gameData, IMapData mapData, IHubContext<GameHub> hubContext)
         {
@@ -32,6 +33,7 @@ namespace BrowserGameBackend
                 // update state of each game
                 foreach (var game in _gameData.GetAll())
                 {
+                    Console.WriteLine("projNum: " + game.Projectiles.Count + " playNum: " + game.Players.Count);
                     var map = _mapData.GetByName(game.MapName);
                     // number of milliseconds since last tick
                     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -62,71 +64,11 @@ namespace BrowserGameBackend
                     // update state of each player in game
                     foreach (var player in game.Players)
                     {
-                        var dx = 0d;
-                        var dy = 0d;
-                        long timeSinceLastAction;
                         // process all enqueued actions 
                         while (player.Moves.TryDequeue(out var action))
                         {
-                            // time between previously and currently processed action
-                            timeSinceLastAction = action.Timestamp - player.LastStateUpdate;
-
                             // process movement
-                            switch (player.LastMovementDirection)
-                            {
-                                // upper - left
-                                case 0:
-                                {
-                                    dx = -player.MovementSpeed * timeSinceLastAction;
-                                    dy = -player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                                // up
-                                case 1:
-                                {
-                                    dy = -player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                                // upper - right
-                                case 2:
-                                {
-                                    dx = player.MovementSpeed * timeSinceLastAction;
-                                    dy = -player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                                // left
-                                case 3:
-                                {
-                                    dx = -player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                                // right
-                                case 5:
-                                {
-                                    dx = player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                                // bottom - left
-                                case 6:
-                                {
-                                    dx = -player.MovementSpeed * timeSinceLastAction;
-                                    dy = player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                                // bottom
-                                case 7:
-                                {
-                                    dy = player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                                // bottom - right
-                                case 8:
-                                {
-                                    dx = player.MovementSpeed * timeSinceLastAction;
-                                    dy = player.MovementSpeed * timeSinceLastAction;
-                                    break;
-                                }
-                            }
+                            HandleMovement(player, map, action.Timestamp - player.LastStateUpdate);
 
                             // change players movement direction
                             player.LastMovementDirection = action.MovementDirection;
@@ -160,81 +102,12 @@ namespace BrowserGameBackend
                                 }
                             }
 
-                            // update player's position
-                            player.X += dx;
-                            player.Y += dy;
-
-                            dx = 0d;
-                            dy = 0d;
-
                             // update player's last update timestamp
                             player.LastStateUpdate = action.Timestamp;
                         }
 
                         // process movement between last action timestamp and now
-                        timeSinceLastAction = now - player.LastStateUpdate;
-                        dx = 0d;
-                        dy = 0d;
-
-                        switch (player.LastMovementDirection)
-                        {
-                            // upper - left
-                            case 0:
-                            {
-                                dx = -player.MovementSpeed * timeSinceLastAction;
-                                dy = -player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                            // up
-                            case 1:
-                            {
-                                dy = -player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                            // upper - right
-                            case 2:
-                            {
-                                dx = player.MovementSpeed * timeSinceLastAction;
-                                dy = -player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                            // left
-                            case 3:
-                            {
-                                dx = -player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                            // right
-                            case 5:
-                            {
-                                dx = player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                            // bottom - left
-                            case 6:
-                            {
-                                dx = -player.MovementSpeed * timeSinceLastAction;
-                                dy = player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                            // bottom
-                            case 7:
-                            {
-                                dy = player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                            // bottom - right
-                            case 8:
-                            {
-                                dx = player.MovementSpeed * timeSinceLastAction;
-                                dy = player.MovementSpeed * timeSinceLastAction;
-                                break;
-                            }
-                        }
-
-                        // update player's position
-                        player.X += dx;
-                        player.Y += dy;
+                        HandleMovement(player, map, now - player.LastStateUpdate);
 
                         // update player's last update timestamp
                         player.LastStateUpdate = now;
@@ -248,7 +121,7 @@ namespace BrowserGameBackend
 
                     await _hubContext.Clients.Group(game.Id.ToString()).SendAsync("serverTick", new GameState()
                     {
-                        DeletedProjectiles = deletedProjectiles,
+                        DeletedProjectiles = new List<int>(),
                         NewProjectiles = newProjectiles,
                         Players = game.Players.Select(p => new PlayerState()
                         {
@@ -263,6 +136,214 @@ namespace BrowserGameBackend
                 // update timestamp of last tick
                 _lastTick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
+        }
+
+        protected void HandleMovement(PlayerModel player, MapModel map, long delta)
+        {
+            var newX = player.X;
+            var newY = player.Y;
+
+            try
+            {
+                switch (player.LastMovementDirection)
+                {
+                    // upper - left
+                    case 0:
+                    {
+                        newX += -player.MovementSpeed * delta;
+                        newY += -player.MovementSpeed * delta;
+
+                        // player can't move left
+                        if (newX - _playerHitboxRadius - _epsilon <= 0 ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + _playerHitboxRadius + _epsilon;
+                        }
+
+                        // player can't move up
+                        if (newY - _playerHitboxRadius - _epsilon <= 0 ||
+                            !map.IsTraversable[(int)Math.Truncate((newY - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((newY - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + _playerHitboxRadius + _epsilon;
+                        }
+
+                        break;
+                    }
+                    // up
+                    case 1:
+                    {
+                        newY += -player.MovementSpeed * delta;
+
+                        // player can't move up
+                        if (newY - _playerHitboxRadius - _epsilon <= 0 ||
+                            !map.IsTraversable[(int)Math.Truncate((newY - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((newY - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + _playerHitboxRadius + _epsilon;
+                        }
+
+                        break;
+                    }
+                    // upper - right
+                    case 2:
+                    {
+                        newX += player.MovementSpeed * delta;
+                        newY += -player.MovementSpeed * delta;
+
+                        // player can't move right
+                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - _playerHitboxRadius - _epsilon;
+                        }
+
+                        // player can't move up
+                        if (newY - _playerHitboxRadius - _epsilon <= 0 ||
+                            !map.IsTraversable[(int)Math.Truncate((newY - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((newY - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + _playerHitboxRadius + _epsilon;
+                        }
+
+                        break;
+                    }
+                    // left
+                    case 3:
+                    {
+                        newX += -player.MovementSpeed * delta;
+
+                        // player can't move left
+                        if (newX - _playerHitboxRadius - _epsilon <= 0 ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + _playerHitboxRadius + _epsilon;
+                        }
+
+                        break;
+                    }
+                    // right
+                    case 5:
+                    {
+                        newX += player.MovementSpeed * delta;
+
+                        // player can't move right
+                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - _playerHitboxRadius - _epsilon;
+                        }
+
+                        break;
+                    }
+                    // bottom - left
+                    case 6:
+                    {
+                        newX += -player.MovementSpeed * delta;
+                        newY += player.MovementSpeed * delta;
+
+                        // player can't move left
+                        if (newX - _playerHitboxRadius - _epsilon <= 0 ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + _playerHitboxRadius + _epsilon;
+                        }
+
+                        // player can't move down
+                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight || 
+                            !map.IsTraversable[(int)Math.Truncate((newY + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((newY + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - _playerHitboxRadius - _epsilon;
+                        }
+
+                        break;
+                    }
+                    // bottom
+                    case 7:
+                    {
+                        newY += player.MovementSpeed * delta;
+
+                        // player can't move down
+                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight ||
+                            !map.IsTraversable[(int)Math.Truncate((newY + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((newY + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - _playerHitboxRadius - _epsilon;
+                        }
+
+                        break;
+                    }
+                    // bottom - right
+                    case 8:
+                    {
+                        newX += player.MovementSpeed * delta;
+                        newY += player.MovementSpeed * delta;
+
+                        // player can't move right
+                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - _playerHitboxRadius - _epsilon;
+                        }
+
+                        // player can't move down
+                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight ||
+                            !map.IsTraversable[(int)Math.Truncate((newY + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth)] ||
+                            !map.IsTraversable[(int)Math.Truncate((newY + _playerHitboxRadius) / map.TileHeight)]
+                                [(int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth)])
+                        {
+                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - _playerHitboxRadius - _epsilon;
+                        }
+
+                        break;
+                    }
+                }
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                Console.WriteLine("x: " + player.X + " y: " + player.Y + " direction: " + player.LastMovementDirection + " newx: " +
+                                  newX + " newy: " + newY + " y1: " + (int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight) +
+                                  " y2: " + (int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight) + " x1: " +
+                                  (int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth) + " x2: " +
+                                  (int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth) + " x + e: " +
+                                  (newX + _playerHitboxRadius + _epsilon) + " x - e: " + (newX - _playerHitboxRadius - _epsilon) + " y + e: " +
+                                  (newY + _playerHitboxRadius + _epsilon) + " y - e: " + (newY - _playerHitboxRadius - _epsilon));
+                Console.WriteLine(e.StackTrace);
+                throw e;
+            }
+
+            player.X = newX;
+            player.Y = newY;
         }
     }
 }

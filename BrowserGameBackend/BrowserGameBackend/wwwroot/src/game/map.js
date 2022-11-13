@@ -31,8 +31,8 @@ export class TileMap{
 
         for(let y = 0; y < data.height; y++){
             for (let x = 0; x < data.width; x++) {
-                this.traversabilityMap[y][x] = (data.layers[0].data[y * data.width + x] - 1 < 0 ? true : tileset[data.layers[0].data[y * data.width + x] - 1].collides) || (data.layers[2].data[y * data.width + x] - 1 < 0 ? false : tileset[data.layers[2].data[y * data.width + x] - 1].collides);
-                this.shootThroughMap[y][x] = data.layers[2].data[y * data.width + x] - 1 < 0 ? false : tileset[data.layers[2].data[y * data.width + x] - 1].collides;
+                this.traversabilityMap[y][x] = !((data.layers[0].data[y * data.width + x] - 1 < 0 ? true : tileset[data.layers[0].data[y * data.width + x] - 1].collides) || (data.layers[2].data[y * data.width + x] - 1 < 0 ? false : tileset[data.layers[2].data[y * data.width + x] - 1].collides));
+                this.shootThroughMap[y][x] = !(data.layers[2].data[y * data.width + x] - 1 < 0 ? false : tileset[data.layers[2].data[y * data.width + x] - 1].collides);
                 this.tileMap[0][y][x] = data.layers[0].data[y * data.width + x] - 1;
                 this.tileMap[1][y][x] = data.layers[1].data[y * data.width + x] - 1;
                 this.tileMap[2][y][x] = data.layers[2].data[y * data.width + x] - 1;

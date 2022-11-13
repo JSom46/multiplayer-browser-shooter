@@ -138,15 +138,6 @@ app.stage.on("pointermove", e => {
 });
 
 app.stage.on("pointerdown", e => {
-    /*projectiles.push(new Projectile({
-        id: 1,
-        pId: client.id, 
-        sx: client.projectilesSpeed * Math.sin(client.rotation + Math.PI * 0.5) * 10, 
-        sy: client.projectilesSpeed * (-Math.cos(client.rotation + Math.PI * 0.5)) * 10, 
-        x: client.x, 
-        y: client.y
-    }));*/
-
     con.updateState({movementDirection: movementDirection(movX, movY), action: 0});
 });
 
@@ -155,11 +146,27 @@ app.ticker.add(delta => {
 
     for(let i = projectiles.length - 1; i >= 0; --i){
         const p = projectiles[i];
-        p.x += p.velocityX * delta;
-        p.y += p.velocityY * delta;
+
+        p.x += p.velocityX * app.ticker.elapsedMS;
+        p.y += p.velocityY * app.ticker.elapsedMS;
+
+        // projectile's outside of map boundries - delete it
         if(p.x < 0 || p.y < 0 || p.x > map.width * map.tileWidth || p.y > map.height * map.tileHeight){
+            console.log(`out of bounds: y: ${Math.floor(p.y / map.tileHeight)} x: ${Math.floor(p.x / map.tileWidth)}`);
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        // projectile hit an obstacle - delete it
+        if(!map.shootThroughMap[Math.floor(p.y / map.tileHeight)][Math.floor(p.x / map.tileWidth)]){
+            console.log(`obstacle: y: ${Math.floor(p.y / map.tileHeight)} x: ${Math.floor(p.x / map.tileWidth)}`);
             projectiles.splice(i, 1);
         }
     }
+
+
+
+
+
     painter.update();
 });

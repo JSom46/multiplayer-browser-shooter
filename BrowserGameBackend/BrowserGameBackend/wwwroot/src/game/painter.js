@@ -73,8 +73,8 @@ export class Painter{
     // adds or updates players' sprites to the stage
     drawPlayers(){
         this.players.forEach(p => {
-            if(p.sprite == undefined){
-                const playerSprite = new PIXI.Sprite(p.texture == undefined ? this.defaultPlayerTexture : p.texture);
+            if(p.sprite === undefined){
+                const playerSprite = new PIXI.Sprite(p.texture === undefined ? this.defaultPlayerTexture : p.texture);
                 playerSprite.anchor.set(0.5, 0.5);
                 p.sprite = playerSprite;
                 this.sprites.add(playerSprite)
@@ -90,8 +90,8 @@ export class Painter{
     // adds or updates projectiles' sprites to the stage
     drawProjectiles(){
         this.projectiles.forEach(p => {
-            if(p.sprite == undefined){
-                const projectileSprite = new PIXI.Sprite(p.texture == undefined ? this.defaultProjectileTexture : p.texture);
+            if(p.sprite === undefined){
+                const projectileSprite = new PIXI.Sprite(p.texture === undefined ? this.defaultProjectileTexture : p.texture);
                 projectileSprite.anchor.set(0.5, 0.5);
                 p.sprite = projectileSprite;
                 this.sprites.add(projectileSprite);

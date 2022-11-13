@@ -19,7 +19,7 @@
         /// 4 - bottom-left, 5 - down, 6 - bottom-right
         /// </summary>
         public int LastMovementDirection { get; set; } = 4;
-        public Queue<PlayerActionModel> Moves { get; set; } = new Queue<PlayerActionModel>();
+        public Queue<PlayerActionModel> Moves { get; set; } = new();
 
         /// <summary>
         /// Player's speed in points per millisecond
@@ -31,7 +31,7 @@
         /// <summary>
         /// Player's projectiles' speed in points per millisecond
         /// </summary>
-        public double ProjectilesSpeed { get; set; } = 10;
+        public double ProjectilesSpeed { get; set; } = 0.7;
         public long LastStateUpdate { get; set; }
     }
 }

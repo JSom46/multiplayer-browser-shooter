@@ -19,8 +19,7 @@ namespace BrowserGameBackend.Data
                 Id = Guid.NewGuid(),
                 MapName = "map1",
                 MaxPlayers = 69,
-                Name = "ultimate game of absolute destruction",
-                Projectiles = new List<ProjectileModel>()
+                Name = "ultimate game of absolute destruction"
             };
 
             game.Projectiles.Add(new ProjectileModel()
@@ -39,55 +38,36 @@ namespace BrowserGameBackend.Data
                 Id = "xd",
                 X = 69.69,
                 Y = 21.37,
-                Deaths = 0,
-                Kills = 0,
-                LastMovementDirection = 4,
-                MovementSpeed = 0.064,
-                Moves = new Queue<PlayerActionModel>(),
                 Name = "dominator",
-                ProjectilesSpeed = 69,
                 LastStateUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             }, game.Id);
         }
 
-        /// <summary>
-        /// Returns list of all games
-        /// </summary>
-        /// <returns></returns>
         public List<GameModel> GetAll()
         {
             return Games;
         }
 
-        /// <summary>
-        /// Return game with specified id or null, if such game does not exist
-        /// </summary>
         /// <param name="id"></param>
-        /// <returns></returns>
+        /// <returns>Return game with specified id or null, if such game does not exist</returns>
         public GameModel? GetById(Guid id)
         {
             return Games.FirstOrDefault(e => e.Id == id);
         }
 
-        /// <summary>
-        /// Return game played by player with specified id or null, if such game does not exist
-        /// </summary>
         /// <param name="id"></param>
-        /// <returns></returns>
+        /// <returns>Return game played by player with specified id or null, if such game does not exist</returns>
         public GameModel? GetByPlayerId(string id)
         {
             PlayerIdGame.TryGetValue(id, out var game);
             return game;
         }
 
-        /// <summary>
-        /// Returns player with specified id or null, if such player does not exist
-        /// </summary>
-        /// <param name="Id"></param>
-        /// <returns></returns>
-        public PlayerModel? GetPlayerById(string Id)
+        /// <param name="id"></param>
+        /// <returns>Returns player with specified id or null, if such player does not exist</returns>
+        public PlayerModel? GetPlayerById(string id)
         {
-            PlayerIdPlayer.TryGetValue(Id, out var player);
+            PlayerIdPlayer.TryGetValue(id, out var player);
             return player;
         }
 
@@ -95,7 +75,7 @@ namespace BrowserGameBackend.Data
         /// Adds game
         /// </summary>
         /// <param name="game"></param>
-        /// <returns></returns>
+        /// <returns>true on success, false otherwise</returns>
         public bool AddGame(GameModel game)
         {
             if (Games.Exists(g => g.Id == game.Id))
@@ -166,7 +146,7 @@ namespace BrowserGameBackend.Data
                 PlayerIdPlayer.Remove(playerModel.Id);
             }
 
-            return Games.Remove(game) ? 0 : -1;
+            return Games.Remove(game) ? 0 : -2;
         }
 
         /// <summary>

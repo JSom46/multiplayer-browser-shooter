@@ -1,5 +1,5 @@
 export class Player{
-    constructor(data, texture){
+    constructor(data){
         this.id = data.id;
         this.x = data.x;
         this.y = data.y;
@@ -9,6 +9,5 @@ export class Player{
         this.kills = data.kills;
         this.deaths = data.deaths;
         this.projectilesSpeed = data.projectilesSpeed;
-        this.texture = texture;
     }
 };
