@@ -89,7 +89,8 @@ namespace BrowserGameBackend.Hubs
                     ProjectilesSpeed = p.ProjectilesSpeed,
                     R = p.R,
                     X = p.X,
-                    Y = p.Y
+                    Y = p.Y,
+                    IsAlive = p.IsAlive
                 }),
                 Projectiles = new List<ProjectileModel>()
             });
@@ -153,7 +154,8 @@ namespace BrowserGameBackend.Hubs
                 ProjectilesSpeed = player.ProjectilesSpeed,
                 R = player.R,
                 X = player.X,
-                Y = player.Y
+                Y = player.Y,
+                IsAlive = player.IsAlive
             });
 
             // add player to hub's room
@@ -171,7 +173,8 @@ namespace BrowserGameBackend.Hubs
                     ProjectilesSpeed = p.ProjectilesSpeed,
                     R = p.R,
                     X = p.X,
-                    Y = p.Y
+                    Y = p.Y,
+                    IsAlive = p.IsAlive
                 }),
                 Projectiles = game.Projectiles
             });
@@ -222,7 +225,18 @@ namespace BrowserGameBackend.Hubs
             {
                 return;
             }
-            player.Moves.Enqueue(new PlayerActionModel(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), movementDirection, rotation, action));
+
+            try
+            {
+                player.Moves.Enqueue(new PlayerActionModel(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                    movementDirection, rotation, action));
+            }
+            catch(ArgumentException e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine(player.Moves.Count);
+            }
         }
     }
 }

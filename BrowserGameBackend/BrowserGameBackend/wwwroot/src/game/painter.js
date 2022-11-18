@@ -12,6 +12,9 @@ export class Painter{
         };
         this.tiles = [];
         this.sprites = new Set();
+        this.texts = new Set();
+        this.messageStage = new PIXI.Container();
+        this.app.stage.addChild(this.messageStage);
     }
 
     setMap(map){
@@ -47,6 +50,10 @@ export class Painter{
 
     setProjectiles(projectilesArr){
         this.projectiles = projectilesArr;
+    }
+
+    setMessages(messageArr){
+        this.messages = messageArr;
     }
 
     // centar camera on specified object which must contain properties x : number and y : number
@@ -104,10 +111,33 @@ export class Painter{
         });
     }
 
+    drawMessages(){
+        this.messages.forEach(m => {
+            if(m.text === undefined){
+                const messageText = new PIXI.Text(m.message, {
+                    "fill": "white",
+                    "fontFamily": "Verdana, Geneva, sans-serif",
+                    "fontSize": 15,
+                    "strokeThickness": 1
+                });
+                m.text = messageText;
+                this.texts.add(messageText);
+                this.messageStage.addChild(messageText);
+            }
+        });
+
+        this.messageStage.children.forEach((c, idx) => {
+            c.position.y = c.height * idx;
+        });
+    }
+
     // deletes sprites that aren't bound to any existing player or projectile
-    deleteUnusedSprites(){
+    deleteUnusedObjects(){
         // set containing sprites in use
-        const  spritesInUse = new Set();
+        const spritesInUse = new Set();
+
+        // set containing text in use
+        const textsInUse = new Set(); 
 
         // add players' sprites
         this.players.forEach(p => {
@@ -119,11 +149,24 @@ export class Painter{
             spritesInUse.add(p.sprite);
         });
 
+        // add 
+        this.messages.forEach(m => {
+            textsInUse.add(m.text);
+        });
+
         // delete unused sprites from the stage
         this.sprites.forEach(s => {
             if(!spritesInUse.has(s)){
                 this.stage.removeChild(s);
                 this.sprites.delete(s);
+            }
+        });
+
+        // delete unused texts from the stage
+        this.texts.forEach(t => {
+            if(!textsInUse.has(t)){
+                this.messageStage.removeChild(t);
+                this.texts.delete(t);
             }
         });
     }
@@ -143,9 +186,10 @@ export class Painter{
         const x = 0.5 * this.app.screen.width - this.cameraCenter.x;
         const y = 0.5 * this.app.screen.height - this.cameraCenter.y;
 
-        this.deleteUnusedSprites();
+        this.deleteUnusedObjects();
         this.drawPlayers();
         this.drawProjectiles();
+        this.drawMessages();
 
         this.stage.position.x = x;
         this.stage.position.y = y;

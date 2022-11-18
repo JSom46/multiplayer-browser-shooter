@@ -1,5 +1,6 @@
 import { Player } from "./player.js";
 import { Projectile } from "./projectile.js";
+import { Message } from "./message.js";
 
 export class Connection{
     constructor(url){
@@ -52,11 +53,27 @@ export class Connection{
     }
 
     handlePlayerJoin = (player) => {
+        this.messages.push(new Message(`${player.name} has joined`));
         this.players.push(new Player(player));
     }
 
     handlePlayerLeave = (playerId) => {
+        this.messages.push(new Message(`${this.players.find(p => p.id === playerId).name} has left`))
         this.players.splice(this.players.findIndex(p => p.id === playerId), 1)
+    }
+
+    handlePlayerKilled = (playerId, killerId) => {
+        if(playerId === this.client.id){
+            this.messages.push(new Message(`You have been killed by ${this.players.find(p => p.id === killerId).name}`));
+            return;
+        }
+
+        if(killerId === this.client.id){
+            this.messages.push(new Message(`You have killed ${this.players.find(p => p.id === playerId).name}`));
+            return;
+        }
+
+        this.messages.push(new Message(`${this.players.find(p => p.id === killerId).name} has killed ${this.players.find(p => p.id === playerId).name}`));
     }
 
     async joinGame(gameId, playerName){
@@ -75,6 +92,7 @@ export class Connection{
                 this.con.on("serverTick", this.handleTick);
                 this.con.on("playerJoined", this.handlePlayerJoin);
                 this.con.on("playerLeft", this.handlePlayerLeave);
+                this.con.on("playerKilled", this.handlePlayerKilled);
 
                 resolve();
             });
@@ -106,7 +124,10 @@ export class Connection{
 
                 this.client = this.players.find(p => p.id === this.con.connectionId);
 
-                this.con.on("serverTick", this.handleTick)
+                this.con.on("serverTick", this.handleTick);
+                this.con.on("playerJoined", this.handlePlayerJoin);
+                this.con.on("playerLeft", this.handlePlayerLeave);
+                this.con.on("playerKilled", this.handlePlayerKilled);
 
                 resolve();
             });
@@ -147,5 +168,9 @@ export class Connection{
 
     setProjectiles(projectilesArr){
         this.projectiles = projectilesArr;
+    }
+
+    setMessages(messageArr){
+        this.messages = messageArr;
     }
 };

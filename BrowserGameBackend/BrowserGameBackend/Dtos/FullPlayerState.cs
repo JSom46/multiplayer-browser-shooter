@@ -11,5 +11,6 @@
         public int Kills { get; set; }
         public int Deaths { get; set; }
         public double ProjectilesSpeed { get; set; }
+        public bool IsAlive { get; set; }
     }
 }

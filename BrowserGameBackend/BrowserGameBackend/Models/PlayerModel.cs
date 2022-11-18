@@ -27,6 +27,7 @@
         public double MovementSpeed { get; set; } = 0.1;
         public int Kills { get; set; } = 0;
         public int Deaths { get; set; } = 0;
+        public bool IsAlive { get; set; } = true;
 
         /// <summary>
         /// Player's projectiles' speed in points per millisecond

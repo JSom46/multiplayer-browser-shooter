@@ -9,5 +9,6 @@ export class Player{
         this.kills = data.kills;
         this.deaths = data.deaths;
         this.projectilesSpeed = data.projectilesSpeed;
+        this.isAlive = data.isAlive;
     }
 };

@@ -5,7 +5,7 @@ import { Painter } from "./game/painter.js";
 import { Player } from "./game/player.js";
 import { Projectile } from "./game/projectile.js";
 import { Connection } from "./game/connection.js";
-import { vectorAngle } from "./game/muchMath.js";
+import { vectorAngle, movementDirection } from "./game/utils.js";
 
 const params = new URLSearchParams(window.location.search);
 
@@ -18,10 +18,12 @@ if(!((params.get("action") === "join" && params.get("playerName") && params.get(
 
 const players = [];
 const projectiles = [];
+const messages = [];
 
 const con = new Connection("gamehub");
 con.setPlayers(players);
-con.setProjectiles(projectiles)
+con.setProjectiles(projectiles);
+con.setMessages(messages);
 
 // starting connection
 await con.start();
@@ -53,18 +55,6 @@ const projectileTexture = await loader.loadTexture("projectileDefault");
 
 let movX = 0;
 let movY = 0;
-
-const movementDirection = (x, y) => {
-    if(x == -1 && y == -1) return 0;
-    if(x == 0 && y == -1) return 1;
-    if(x == 1 && y == -1) return 2;
-    if(x == -1 && y == 0) return 3;
-    if(x == 0 && y == 0) return 4;
-    if(x == 1 && y == 0) return 5;
-    if(x == -1 && y == 1) return 6;
-    if(x == 0 && y == 1) return 7;
-    if(x == 1 && y == 1) return 8;
-}
 
 window.addEventListener("keydown", e => {
     switch(e.key){
@@ -129,6 +119,7 @@ painter.setDefaultPlayerTexture(playerTexture);
 painter.setDefaultProjectileTexture(projectileTexture);
 painter.setPlayers(players);
 painter.setProjectiles(projectiles);
+painter.setMessages(messages);
 painter.draw();
 
 app.stage.interactive = true;
@@ -141,14 +132,16 @@ app.stage.on("pointerdown", e => {
     con.updateState({movementDirection: movementDirection(movX, movY), action: 0});
 });
 
-app.ticker.add(delta => {
+app.ticker.add(d => {
+    const delta = app.ticker.elapsedMS;
+
     con.updateState({movementDirection: movementDirection(movX, movY)});
 
     for(let i = projectiles.length - 1; i >= 0; --i){
         const p = projectiles[i];
 
-        p.x += p.velocityX * app.ticker.elapsedMS;
-        p.y += p.velocityY * app.ticker.elapsedMS;
+        p.x += p.velocityX * delta;
+        p.y += p.velocityY * delta;
 
         // projectile's outside of map boundries - delete it
         if(p.x < 0 || p.y < 0 || p.x > map.width * map.tileWidth || p.y > map.height * map.tileHeight){
@@ -164,9 +157,13 @@ app.ticker.add(delta => {
         }
     }
 
-
-
-
+    for(let i = messages.length - 1; i >= 0; --i){
+        messages[i].ttl -= delta;
+        
+        if(messages[i].ttl <= 0){
+            messages.splice(i, 1);
+        }
+    }
 
     painter.update();
 });

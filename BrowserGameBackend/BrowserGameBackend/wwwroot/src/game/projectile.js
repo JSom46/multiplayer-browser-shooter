@@ -1,9 +1,8 @@
-import { vectorAngle } from "./muchMath.js";
+import { vectorAngle } from "./utils.js";
 
 export class Projectile{
     constructor(data, timestamp){
         const delta = timestamp === undefined ? 0 : performance.now - timestamp;
-        //console.log(delta);
         this.id = data.id;
         this.playerId = data.pId;
         this.velocityX = data.sx;
