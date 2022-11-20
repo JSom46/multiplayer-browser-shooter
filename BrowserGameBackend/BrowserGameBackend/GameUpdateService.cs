@@ -11,16 +11,17 @@ namespace BrowserGameBackend
         private readonly IGameData _gameData;
         private readonly IMapData _mapData;
         private readonly IHubContext<GameHub> _hubContext;
-        private int _tick = 17;
         private readonly PeriodicTimer _timer;
         private long _lastTick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        private const int Tick = 17;
+        private const double Epsilon = 0.00001;
 
         public GameUpdateService(IGameData gameData, IMapData mapData, IHubContext<GameHub> hubContext)
         {
             _gameData = gameData;
             _mapData = mapData;
             _hubContext = hubContext;
-            _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(_tick));
+            _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(Tick));
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -197,8 +198,8 @@ namespace BrowserGameBackend
                             newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
-                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
-                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var y1 = (int)((player.Y - playerHitboxRadius + Epsilon) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius - Epsilon) / map.TileHeight);
                         var x = (int)((newX - playerHitboxRadius) / map.TileWidth);
 
                         // player can't move left
@@ -208,8 +209,8 @@ namespace BrowserGameBackend
                         }
 
                         var y = (int)((newY - playerHitboxRadius) / map.TileHeight);
-                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
-                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+                        var x1 = (int)((newX - playerHitboxRadius + Epsilon) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius - Epsilon) / map.TileWidth);
 
                         // player can't move up
                         if (y < 0 || x1 < 0 || x2 >= map.Width || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
@@ -243,8 +244,8 @@ namespace BrowserGameBackend
                         }
 
                         var y = (int)((newY - playerHitboxRadius) / map.TileHeight);
-                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
-                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+                        var x1 = (int)((newX - playerHitboxRadius + Epsilon) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius - Epsilon) / map.TileWidth);
 
                         // player can't move up
                         if (y < 0 || x1 < 0 || x2 >= map.Width || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
@@ -278,8 +279,8 @@ namespace BrowserGameBackend
                             newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
-                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
-                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var y1 = (int)((player.Y - playerHitboxRadius + Epsilon) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius - Epsilon) / map.TileHeight);
                         var x = (int)((newX + playerHitboxRadius) / map.TileWidth);
 
                         // player can't move right
@@ -289,8 +290,8 @@ namespace BrowserGameBackend
                         }
 
                         var y = (int)((newY - playerHitboxRadius) / map.TileHeight);
-                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
-                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+                        var x1 = (int)((newX - playerHitboxRadius + Epsilon) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius - Epsilon) / map.TileWidth);
 
                         // player can't move up
                         if (y < 0 || x1 < 0 || x2 >= map.Width || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
@@ -323,8 +324,8 @@ namespace BrowserGameBackend
                             newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
-                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
-                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var y1 = (int)((player.Y - playerHitboxRadius + Epsilon) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius - Epsilon) / map.TileHeight);
                         var x = (int)((newX - playerHitboxRadius) / map.TileWidth);
 
                         // player can't move left
@@ -358,8 +359,8 @@ namespace BrowserGameBackend
                             newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
-                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
-                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var y1 = (int)((player.Y - playerHitboxRadius + Epsilon) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius - Epsilon) / map.TileHeight);
                         var x = (int)((newX + playerHitboxRadius) / map.TileWidth);
 
                         // player can't move right
@@ -395,8 +396,8 @@ namespace BrowserGameBackend
                         }
 
 
-                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
-                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var y1 = (int)((player.Y - playerHitboxRadius + Epsilon) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius - Epsilon) / map.TileHeight);
                         var x = (int)((newX - playerHitboxRadius) / map.TileWidth);
 
                         // player can't move left
@@ -406,8 +407,8 @@ namespace BrowserGameBackend
                         }
 
                         var y = (int)((newY + playerHitboxRadius) / map.TileHeight);
-                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
-                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+                        var x1 = (int)((newX - playerHitboxRadius + Epsilon) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius - Epsilon) / map.TileWidth);
 
                         // player can't move down
                         if (x1 < 0 || x2 >= map.Width || y >= map.Height || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
@@ -441,8 +442,8 @@ namespace BrowserGameBackend
                         }
 
                         var y = (int)((newY + playerHitboxRadius) / map.TileHeight);
-                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
-                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+                        var x1 = (int)((newX - playerHitboxRadius + Epsilon) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius - Epsilon) / map.TileWidth);
 
                         // player can't move down
                         if (x1 < 0 || x2 >= map.Width || y >= map.Height || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
@@ -476,8 +477,8 @@ namespace BrowserGameBackend
                             newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
-                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
-                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var y1 = (int)((player.Y - playerHitboxRadius + Epsilon) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius - Epsilon) / map.TileHeight);
                         var x = (int)((newX + playerHitboxRadius) / map.TileWidth);
 
                         // player can't move right
@@ -487,8 +488,8 @@ namespace BrowserGameBackend
                         }
 
                         var y = (int)((newY + playerHitboxRadius) / map.TileHeight);
-                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
-                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+                        var x1 = (int)((newX - playerHitboxRadius + Epsilon) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius - Epsilon) / map.TileWidth);
 
                         // player can't move down
                         if (x1 < 0 || x2 >= map.Width || y >= map.Height || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
