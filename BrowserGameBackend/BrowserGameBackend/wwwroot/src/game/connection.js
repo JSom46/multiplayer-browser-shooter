@@ -63,17 +63,28 @@ export class Connection{
     }
 
     handlePlayerKilled = (playerId, killerId) => {
+        const player = this.players.find(p => p.id === playerId);
+        const killer = this.players.find(p => p.id === killerId);
+
+        if(player !== undefined){
+            player.deaths++;
+        }
+
+        if(killer !== undefined){
+            killer.kills++;
+        }
+
         if(playerId === this.client.id){
-            this.messages.push(new Message(`You have been killed by ${this.players.find(p => p.id === killerId).name}`));
+            this.messages.push(new Message(`You have been killed by ${killer === undefined ? "unknown" : killer.name}`));
             return;
         }
 
         if(killerId === this.client.id){
-            this.messages.push(new Message(`You have killed ${this.players.find(p => p.id === playerId).name}`));
+            this.messages.push(new Message(`You have killed ${player === undefined ? "unknown" : player.name}`));
             return;
         }
 
-        this.messages.push(new Message(`${this.players.find(p => p.id === killerId).name} has killed ${this.players.find(p => p.id === playerId).name}`));
+        this.messages.push(new Message(`${killer === undefined ? "unknown" : killer.name} has killed ${player === undefined ? "unknown" : player.name}`));
     }
 
     async joinGame(gameId, playerName){

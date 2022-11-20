@@ -14,9 +14,6 @@ namespace BrowserGameBackend
         private int _tick = 17;
         private readonly PeriodicTimer _timer;
         private long _lastTick = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        private readonly double _playerHitboxRadius = 0.4 * 32;
-        private readonly double _projectileHitboxRadius = 0.25 * 32;
-        private readonly double _epsilon = 0;
 
         public GameUpdateService(IGameData gameData, IMapData mapData, IHubContext<GameHub> hubContext)
         {
@@ -34,7 +31,8 @@ namespace BrowserGameBackend
                 foreach (var game in _gameData.GetAll())
                 {
                     var map = _mapData.GetByName(game.MapName);
-                    // number of milliseconds since last tick
+                    var playerHitboxRadius = 0.4 * Math.Max(map.TileHeight, map.TileWidth);
+                    var projectileHitboxRadius = 0.25 * Math.Max(map.TileHeight, map.TileWidth);
                     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     var deltaTime = now - _lastTick;
                     var deletedProjectiles = new List<int>();
@@ -46,7 +44,7 @@ namespace BrowserGameBackend
                         game.Projectiles[i].X += game.Projectiles[i].SX * deltaTime;
                         game.Projectiles[i].Y += game.Projectiles[i].SY * deltaTime;
 
-                        // check if projectile is inside map's boundries and didn't hit any obstacle
+                        // projectile is inside map's boundries and didn't hit any obstacle
                         if (game.Projectiles[i].X <= map.Width * map.TileWidth &&
                             game.Projectiles[i].Y <= map.Height * map.TileHeight && 
                             game.Projectiles[i].X >= 0 && game.Projectiles[i].Y >= 0 &&
@@ -67,7 +65,7 @@ namespace BrowserGameBackend
                         while (player.Moves.TryDequeue(out var action))
                         {
                             // process movement
-                            HandlePlayerMovement(player, map, action.Timestamp - player.LastStateUpdate);
+                            HandlePlayerMovement(player, map, action.Timestamp - player.LastStateUpdate, playerHitboxRadius);
 
                             // change players movement direction
                             player.LastMovementDirection = action.MovementDirection;
@@ -104,9 +102,8 @@ namespace BrowserGameBackend
                             // update player's last update timestamp
                             player.LastStateUpdate = action.Timestamp;
                         }
-
                         // process movement between last action timestamp and now
-                        HandlePlayerMovement(player, map, now - player.LastStateUpdate);
+                        HandlePlayerMovement(player, map, now - player.LastStateUpdate, playerHitboxRadius);
 
                         // check if player got hit by other player's projectile
                         foreach (var projectile in game.Projectiles)
@@ -121,7 +118,7 @@ namespace BrowserGameBackend
                             var distance = Math.Sqrt(Math.Pow(player.X - projectile.X, 2) + Math.Pow(player.Y - projectile.Y, 2));
 
                             // player wasn't hit by a projectile
-                            if (distance >= _playerHitboxRadius + _projectileHitboxRadius)
+                            if (distance >= playerHitboxRadius + projectileHitboxRadius)
                             {
                                 continue;
                             }
@@ -167,7 +164,7 @@ namespace BrowserGameBackend
             }
         }
 
-        protected void HandlePlayerMovement(PlayerModel player, MapModel map, long delta)
+        protected void HandlePlayerMovement(PlayerModel player, MapModel map, long delta, double playerHitboxRadius)
         {
             var newX = player.X;
             var newY = player.Y;
@@ -183,39 +180,41 @@ namespace BrowserGameBackend
                         newY += -player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
+
+                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var x = (int)((newX - playerHitboxRadius) / map.TileWidth);
 
                         // player can't move left
-                        if (!map.IsTraversable[(int)((player.Y - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((player.Y + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)])
+                        if (y1 < 0 || y2 >= map.Height || x < 0 || !map.IsTraversable[y1][x] || !map.IsTraversable[y2][x])
                         {
-                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + _playerHitboxRadius + _epsilon;
+                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + playerHitboxRadius;
                         }
 
+                        var y = (int)((newY - playerHitboxRadius) / map.TileHeight);
+                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+
                         // player can't move up
-                        if (!map.IsTraversable[(int)((newY - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((newY - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (y < 0 || x1 < 0 || x2 >= map.Width || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
                         {
-                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + _playerHitboxRadius + _epsilon;
+                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + playerHitboxRadius;
                         }
 
                         break;
@@ -226,30 +225,31 @@ namespace BrowserGameBackend
                         newY += -player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
+                        var y = (int)((newY - playerHitboxRadius) / map.TileHeight);
+                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+
                         // player can't move up
-                        if (!map.IsTraversable[(int)((newY - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((newY - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (y < 0 || x1 < 0 || x2 >= map.Width || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
                         {
-                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + _playerHitboxRadius + _epsilon;
+                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + playerHitboxRadius;
                         }
 
                         break;
@@ -261,39 +261,41 @@ namespace BrowserGameBackend
                         newY += -player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
+
+                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var x = (int)((newX + playerHitboxRadius) / map.TileWidth);
 
                         // player can't move right
-                        if (!map.IsTraversable[(int)((player.Y - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((player.Y + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (x >= map.Width || y1 < 0 || y2 >= map.Height || !map.IsTraversable[y1][x] || !map.IsTraversable[y2][x])
                         {
-                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - playerHitboxRadius;
                         }
 
+                        var y = (int)((newY - playerHitboxRadius) / map.TileHeight);
+                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+
                         // player can't move up
-                        if (!map.IsTraversable[(int)((newY - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((newY - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (y < 0 || x1 < 0 || x2 >= map.Width || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
                         {
-                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + _playerHitboxRadius + _epsilon;
+                            newY = Math.Floor(player.Y / map.TileHeight) * map.TileHeight + playerHitboxRadius;
                         }
 
                         break;
@@ -304,30 +306,31 @@ namespace BrowserGameBackend
                         newX += -player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
+                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var x = (int)((newX - playerHitboxRadius) / map.TileWidth);
+
                         // player can't move left
-                        if (!map.IsTraversable[(int)((player.Y - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((player.Y + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)])
+                        if (y1 < 0 || y2 >= map.Height || x <= 0 || !map.IsTraversable[y1][x] || !map.IsTraversable[y2][x])
                         {
-                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + _playerHitboxRadius + _epsilon;
+                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + playerHitboxRadius;
                         }
 
                         break;
@@ -338,30 +341,31 @@ namespace BrowserGameBackend
                         newX += player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
+                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var x = (int)((newX + playerHitboxRadius) / map.TileWidth);
+
                         // player can't move right
-                        if (!map.IsTraversable[(int)((player.Y - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((player.Y + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (x >= map.Width || y1 < 0 || y2 >= map.Height || !map.IsTraversable[y1][x] || !map.IsTraversable[y2][x])
                         {
-                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - playerHitboxRadius;
                         }
 
                         break;
@@ -373,39 +377,42 @@ namespace BrowserGameBackend
                         newY += player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
+
+
+                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var x = (int)((newX - playerHitboxRadius) / map.TileWidth);
 
                         // player can't move left
-                        if (!map.IsTraversable[(int)((player.Y - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((player.Y + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)])
+                        if (y1 < 0 || y2 >= map.Height || x < 0 || !map.IsTraversable[y1][x] || !map.IsTraversable[y2][x])
                         {
-                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + _playerHitboxRadius + _epsilon;
+                            newX = Math.Floor(player.X / map.TileWidth) * map.TileWidth + playerHitboxRadius;
                         }
 
+                        var y = (int)((newY + playerHitboxRadius) / map.TileHeight);
+                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+
                         // player can't move down
-                        if (!map.IsTraversable[(int)((newY + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((newY + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (x1 < 0 || x2 >= map.Width || y >= map.Height || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
                         {
-                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - playerHitboxRadius;
                         }
 
                         break;
@@ -416,30 +423,31 @@ namespace BrowserGameBackend
                         newY += player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
 
+                        var y = (int)((newY + playerHitboxRadius) / map.TileHeight);
+                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+
                         // player can't move down
-                        if (!map.IsTraversable[(int)((newY + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((newY + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (x1 < 0 || x2 >= map.Width || y >= map.Height || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
                         {
-                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - playerHitboxRadius;
                         }
 
                         break;
@@ -451,39 +459,41 @@ namespace BrowserGameBackend
                         newY += player.MovementSpeed * delta;
 
                         // player out of map's boundries
-                        if (newX - _playerHitboxRadius - _epsilon <= 0)
+                        if (newX - playerHitboxRadius <= 0)
                         {
-                            newX = _playerHitboxRadius + _epsilon;
+                            newX = playerHitboxRadius;
                         }
-                        if (newY - _playerHitboxRadius - _epsilon <= 0)
+                        if (newY - playerHitboxRadius <= 0)
                         {
-                            newY = _playerHitboxRadius + _epsilon;
+                            newY = playerHitboxRadius;
                         }
-                        if (newX + _playerHitboxRadius + _epsilon >= map.Width * map.TileWidth)
+                        if (newX + playerHitboxRadius >= map.Width * map.TileWidth)
                         {
-                            newX = map.Width * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = map.Width * map.TileWidth - playerHitboxRadius;
                         }
-                        if (newY + _playerHitboxRadius + _epsilon >= map.Height * map.TileHeight)
+                        if (newY + playerHitboxRadius >= map.Height * map.TileHeight)
                         {
-                            newY = map.Height * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = map.Height * map.TileHeight - playerHitboxRadius;
                         }
+
+                        var y1 = (int)((player.Y - playerHitboxRadius) / map.TileHeight);
+                        var y2 = (int)((player.Y + playerHitboxRadius) / map.TileHeight);
+                        var x = (int)((newX + playerHitboxRadius) / map.TileWidth);
 
                         // player can't move right
-                        if (!map.IsTraversable[(int)((player.Y - _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((player.Y + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (x >= map.Width || y1 < 0 || y2 >= map.Height || !map.IsTraversable[y1][x] || !map.IsTraversable[y2][x])
                         {
-                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - _playerHitboxRadius - _epsilon;
+                            newX = Math.Ceiling(player.X / map.TileWidth) * map.TileWidth - playerHitboxRadius;
                         }
 
+                        var y = (int)((newY + playerHitboxRadius) / map.TileHeight);
+                        var x1 = (int)((newX - playerHitboxRadius) / map.TileWidth);
+                        var x2 = (int)((newX + playerHitboxRadius) / map.TileWidth);
+
                         // player can't move down
-                        if (!map.IsTraversable[(int)((newY + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX - _playerHitboxRadius) / map.TileWidth)] ||
-                            !map.IsTraversable[(int)((newY + _playerHitboxRadius) / map.TileHeight)]
-                                [(int)((newX + _playerHitboxRadius) / map.TileWidth)])
+                        if (x1 < 0 || x2 >= map.Width || y >= map.Height || !map.IsTraversable[y][x1] || !map.IsTraversable[y][x2])
                         {
-                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - _playerHitboxRadius - _epsilon;
+                            newY = Math.Ceiling(player.Y / map.TileHeight) * map.TileHeight - playerHitboxRadius;
                         }
 
                         break;
@@ -493,12 +503,13 @@ namespace BrowserGameBackend
             catch (IndexOutOfRangeException e)
             {
                 Console.WriteLine("x: " + player.X + " y: " + player.Y + " direction: " + player.LastMovementDirection + " newx: " +
-                                  newX + " newy: " + newY + " y1: " + (int)Math.Truncate((player.Y - _playerHitboxRadius) / map.TileHeight) +
-                                  " y2: " + (int)Math.Truncate((player.Y + _playerHitboxRadius) / map.TileHeight) + " x1: " +
-                                  (int)Math.Truncate((newX - _playerHitboxRadius) / map.TileWidth) + " x2: " +
-                                  (int)Math.Truncate((newX + _playerHitboxRadius) / map.TileWidth) + " x + e: " +
-                                  (newX + _playerHitboxRadius + _epsilon) + " x - e: " + (newX - _playerHitboxRadius - _epsilon) + " y + e: " +
-                                  (newY + _playerHitboxRadius + _epsilon) + " y - e: " + (newY - _playerHitboxRadius - _epsilon));
+                                  newX + " newy: " + newY + " y1: " + ((int)(player.Y - playerHitboxRadius) / map.TileHeight) +
+                                  " y2: " + (int)((player.Y + playerHitboxRadius) / map.TileHeight) + " x1: " +
+                                  (int)((newX - playerHitboxRadius) / map.TileWidth) + " x2: " +
+                                  (int)((newX + playerHitboxRadius) / map.TileWidth) + " x + e: " +
+                                  (newX + playerHitboxRadius) + " x - e: " + (newX - playerHitboxRadius) + " y + e: " +
+                                  (newY + playerHitboxRadius) + " y - e: " + (newY - playerHitboxRadius) + "mapwidth: " + 
+                                  map.IsTraversable[0].Length + "mapheight" + map.IsTraversable.Length);
                 Console.WriteLine(e.StackTrace);
                 throw e;
             }
