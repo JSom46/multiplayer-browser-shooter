@@ -138,22 +138,30 @@ app.ticker.add(d => {
     con.updateState({movementDirection: movementDirection(movX, movY)});
 
     for(let i = projectiles.length - 1; i >= 0; --i){
-        const p = projectiles[i];
+        const projectile = projectiles[i];
 
-        p.x += p.velocityX * delta;
-        p.y += p.velocityY * delta;
+        projectile.x += projectile.velocityX * delta;
+        projectile.y += projectile.velocityY * delta;
 
         // projectile's outside of map boundries - delete it
-        if(p.x < 0 || p.y < 0 || p.x > map.width * map.tileWidth || p.y > map.height * map.tileHeight){
-            console.log(`out of bounds: y: ${Math.floor(p.y / map.tileHeight)} x: ${Math.floor(p.x / map.tileWidth)}`);
+        if(projectile.x < 0 || projectile.y < 0 || projectile.x > map.width * map.tileWidth || projectile.y > map.height * map.tileHeight){
             projectiles.splice(i, 1);
             continue;
         }
 
         // projectile hit an obstacle - delete it
-        if(!map.shootThroughMap[Math.floor(p.y / map.tileHeight)][Math.floor(p.x / map.tileWidth)]){
-            console.log(`obstacle: y: ${Math.floor(p.y / map.tileHeight)} x: ${Math.floor(p.x / map.tileWidth)}`);
+        if(!map.shootThroughMap[Math.floor(projectile.y / map.tileHeight)][Math.floor(projectile.x / map.tileWidth)]){
             projectiles.splice(i, 1);
+        }
+
+        for(const player in players){
+            const distance = Math.sqrt(Math.pow(player.x - projectile.x, 2) + Math.pow(player.y - projectile.y, 2));
+
+            // player got hit - delete projectile
+            if(distance < map.playerHitboxRadius){
+                projectiles.splice(i, 1);
+                break;
+            }
         }
     }
 

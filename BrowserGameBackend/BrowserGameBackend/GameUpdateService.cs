@@ -36,7 +36,6 @@ namespace BrowserGameBackend
                     var projectileHitboxRadius = 0.25 * Math.Max(map.TileHeight, map.TileWidth);
                     var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     var deltaTime = now - _lastTick;
-                    var deletedProjectiles = new List<int>();
                     var newProjectiles = new List<ProjectileModel>();
 
                     // update state of each projectile in game
@@ -66,7 +65,7 @@ namespace BrowserGameBackend
                         while (player.Moves.TryDequeue(out var action))
                         {
                             // process movement
-                            HandlePlayerMovement(player, map, action.Timestamp - player.LastStateUpdate, playerHitboxRadius);
+                            MovePlayer(player, map, action.Timestamp - player.LastStateUpdate, playerHitboxRadius);
 
                             // change players movement direction
                             player.LastMovementDirection = action.MovementDirection;
@@ -74,7 +73,7 @@ namespace BrowserGameBackend
                             // change players rotation
                             player.R = action.R;
 
-                                // execute action if it's been defined in action (I'm bad at naming stuff)
+                            // execute action if it's been defined in action (I'm bad at naming stuff)
                             if (action.Action != null)
                             {
                                 switch (action.Action)
@@ -104,7 +103,7 @@ namespace BrowserGameBackend
                             player.LastStateUpdate = action.Timestamp;
                         }
                         // process movement between last action timestamp and now
-                        HandlePlayerMovement(player, map, now - player.LastStateUpdate, playerHitboxRadius);
+                        MovePlayer(player, map, now - player.LastStateUpdate, playerHitboxRadius);
 
                         // check if player got hit by other player's projectile
                         foreach (var projectile in game.Projectiles)
@@ -115,7 +114,7 @@ namespace BrowserGameBackend
                                 continue;
                             }
 
-                            // distance between centers of player and projectile
+                            // distance between centers of player's model and projectile
                             var distance = Math.Sqrt(Math.Pow(player.X - projectile.X, 2) + Math.Pow(player.Y - projectile.Y, 2));
 
                             // player wasn't hit by a projectile
@@ -124,17 +123,18 @@ namespace BrowserGameBackend
                                 continue;
                             }
 
+                            // get player's killer
                             var killer = game.Players.FirstOrDefault(p => p.Id == projectile.PId);
 
+                            // handle player's death
                             player.Deaths++;
-                            player.IsAlive = false;
+                            RandomPlayerPosition(player, map);
 
                             if (killer != null)
                             {
                                 killer.Kills++;
                             }
 
-                            deletedProjectiles.Add(projectile.Id);
                             game.Projectiles.Remove(projectile);
 
                             await _hubContext.Clients.Group(game.Id.ToString()).SendAsync("playerKilled", player.Id, killer?.Id);
@@ -148,7 +148,6 @@ namespace BrowserGameBackend
 
                     await _hubContext.Clients.Group(game.Id.ToString()).SendAsync("serverTick", new GameState()
                     {
-                        DeletedProjectiles = deletedProjectiles,
                         NewProjectiles = newProjectiles,
                         Players = game.Players.Select(p => new PlayerState()
                         {
@@ -165,7 +164,7 @@ namespace BrowserGameBackend
             }
         }
 
-        protected void HandlePlayerMovement(PlayerModel player, MapModel map, long delta, double playerHitboxRadius)
+        protected void MovePlayer(PlayerModel player, MapModel map, long delta, double playerHitboxRadius)
         {
             var newX = player.X;
             var newY = player.Y;
@@ -517,6 +516,27 @@ namespace BrowserGameBackend
 
             player.X = newX;
             player.Y = newY;
+        }
+
+        /// <summary>
+        /// change player's position to a center of random, traversable field
+        /// </summary>
+        /// <param name="player">player whose position is to be changed</param>
+        /// <param name="map">map the player is moving on</param>
+        protected void RandomPlayerPosition(PlayerModel player, MapModel map)
+        {
+            var rng = new Random();
+            var x = rng.Next(0, map.Width);
+            var y = rng.Next(0, map.Height);
+
+            while (!map.IsTraversable[y][x])
+            {
+                x = rng.Next(0, map.Width);
+                y = rng.Next(0, map.Height);
+            }
+
+            player.X = x * map.TileWidth + map.TileWidth * 0.5;
+            player.Y = y * map.TileHeight + map.TileHeight * 0.5;
         }
     }
 }

@@ -35,10 +35,6 @@ export class Connection{
             }
         });
 
-        state.deletedProjectiles.forEach(p => {
-            this.projectiles.splice(this.projectiles.findIndex(e => e.id === p.id), 1);
-        });
-
         state.newProjectiles.forEach(p => {
             const proj = new Projectile({
                 id: p.id,

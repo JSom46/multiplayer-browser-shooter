@@ -18,7 +18,8 @@ export class TileMap{
         this.tileSpacing = data.tilesets[0].spacing;
         this.tileColumns = data.tilesets[0].columns;
         this.tileRows = Math.round(data.tilesets[0].tilecount / data.tilesets[0].columns);
-
+        this.playerHitboxRadius = Math.max(this.tileWidth, this.tileHeight) * 0.4;
+        this.playerHitboxRadius = Math.max(this.tileWidth, this.tileHeight) * 0.25;
 
         for(let y = 0; y < data.height; y++){
             this.traversabilityMap.push(new Array(data.width));
