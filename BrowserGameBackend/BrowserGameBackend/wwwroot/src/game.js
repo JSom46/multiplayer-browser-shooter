@@ -6,6 +6,7 @@ import { Player } from "./game/player.js";
 import { Projectile } from "./game/projectile.js";
 import { Connection } from "./game/connection.js";
 import { vectorAngle, movementDirection } from "./game/utils.js";
+import { Menu } from './game/menu.js';
 
 const params = new URLSearchParams(window.location.search);
 
@@ -16,14 +17,20 @@ if(!((params.get("action") === "join" && params.get("playerName") && params.get(
     document.location.href = "/index.html";
 }
 
+// array containing players participating in game
 const players = [];
+
+// array of projectiles on a map
 const projectiles = [];
+
+// array of messages shown
 const messages = [];
 
-const con = new Connection("gamehub");
-con.setPlayers(players);
-con.setProjectiles(projectiles);
-con.setMessages(messages);
+// connection with signalr server
+const con = new Connection("gamehub")
+    .setPlayers(players)
+    .setProjectiles(projectiles)
+    .setMessages(messages);
 
 // starting connection
 await con.start();
@@ -112,15 +119,15 @@ window.addEventListener("keyup", e => {
     }
 });
 
-const painter = new Painter(app);
-painter.setMap(map);
-painter.centerCameraOn(client);
-painter.setDefaultPlayerTexture(playerTexture);
-painter.setDefaultProjectileTexture(projectileTexture);
-painter.setPlayers(players);
-painter.setProjectiles(projectiles);
-painter.setMessages(messages);
-painter.draw();
+const painter = new Painter(app)
+    .setMap(map)
+    .centerCameraOn(client)
+    .setDefaultPlayerTexture(playerTexture)
+    .setDefaultProjectileTexture(projectileTexture)
+    .setPlayers(players)
+    .setProjectiles(projectiles)
+    .setMessages(messages)
+    .draw();
 
 app.stage.interactive = true;
 

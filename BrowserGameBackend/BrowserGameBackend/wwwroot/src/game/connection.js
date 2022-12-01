@@ -15,6 +15,7 @@ export class Connection{
         })
 
         this.lastUpdate = performance.now();
+        return this;
     }
 
     // connects with server
@@ -171,13 +172,16 @@ export class Connection{
 
     setPlayers(playerArr){
         this.players = playerArr;
+        return this;
     }
 
     setProjectiles(projectilesArr){
         this.projectiles = projectilesArr;
+        return this;
     }
 
     setMessages(messageArr){
         this.messages = messageArr;
+        return this;
     }
 };

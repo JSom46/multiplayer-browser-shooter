@@ -15,11 +15,12 @@ export class Painter{
         this.texts = new Set();
         this.messageStage = new PIXI.Container();
         this.app.stage.addChild(this.messageStage);
+
+        return this;
     }
 
     setMap(map){
         this.map = map;
-        
         
         for(let y = 0; y < this.map.tileRows; y++){
             for(let x = 0; x < this.map.tileColumns; x++){
@@ -34,31 +35,39 @@ export class Painter{
                 this.tiles.push(tile);
             }
         }
+
+        return this;
     }
 
     setDefaultPlayerTexture(texture){
         this.defaultPlayerTexture = texture;
+        return this;
     }
 
     setDefaultProjectileTexture(texture){
         this.defaultProjectileTexture = texture;
+        return this;
     }
 
     setPlayers(playersArr){
         this.players = playersArr;
+        return this;
     }
 
     setProjectiles(projectilesArr){
         this.projectiles = projectilesArr;
+        return this;
     }
 
     setMessages(messageArr){
         this.messages = messageArr;
+        return this;
     }
 
     // centar camera on specified object which must contain properties x : number and y : number
     centerCameraOn(object){
         this.cameraCenter = object;
+        return this;
     }
 
     // adds selected layer of map to the stage
@@ -74,7 +83,8 @@ export class Painter{
                 map.addChild(tile);
             }
         }
-        this.stage.addChild(map)
+
+        this.stage.addChild(map);
     }
 
     // adds or updates players' sprites to the stage
@@ -179,6 +189,8 @@ export class Painter{
         this.drawProjectiles();
         this.drawLayer(2);
         this.drawLayer(3);
+
+        return this;
     }
 
     // updates location of sprites
@@ -193,5 +205,7 @@ export class Painter{
 
         this.stage.position.x = x;
         this.stage.position.y = y;
+
+        return this;
     }
 };
