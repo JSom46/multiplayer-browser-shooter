@@ -205,7 +205,5 @@ export class Painter{
 
         this.stage.position.x = x;
         this.stage.position.y = y;
-
-        return this;
     }
 };

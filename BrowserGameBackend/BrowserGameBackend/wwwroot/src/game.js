@@ -161,11 +161,17 @@ app.ticker.add(d => {
             projectiles.splice(i, 1);
         }
 
-        for(const player in players){
+        for(const player of players){
+            // player can't be hit by his own projectile
+            if(projectile.playerId === player.id){
+                continue;
+            }
+
+            // distance between center of projectile and center of player
             const distance = Math.sqrt(Math.pow(player.x - projectile.x, 2) + Math.pow(player.y - projectile.y, 2));
 
             // player got hit - delete projectile
-            if(distance < map.playerHitboxRadius){
+            if(distance < map.playerHitboxRadius + map.projectileHitboxRadius){
                 projectiles.splice(i, 1);
                 break;
             }
