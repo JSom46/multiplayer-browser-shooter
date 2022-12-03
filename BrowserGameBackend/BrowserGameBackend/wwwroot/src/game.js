@@ -60,11 +60,34 @@ const map = await loader.loadMap(params.get("map"));
 const playerTexture = await loader.loadTexture("playerDefault");
 const projectileTexture = await loader.loadTexture("projectileDefault");
 
+const painter = new Painter(app)
+    .setMap(map)
+    .centerCameraOn(client)
+    .setDefaultPlayerTexture(playerTexture)
+    .setDefaultProjectileTexture(projectileTexture)
+    .setPlayers(players)
+    .setProjectiles(projectiles)
+    .setMessages(messages)
+    .draw();
+
+const menu = new Menu()
+    .setPosition(painter.width() * 0.25, painter.height() * 0.25)
+    .setDimensions(painter.width() * 0.5, painter.height() * 0.65)
+    .addButton('Exit to menu', () => {
+        document.location.href = "/index.html";
+    })
+    .addToStage(painter.app.stage);
+
+console.log(menu);
+
 let movX = 0;
 let movY = 0;
 
 window.addEventListener("keydown", e => {
     switch(e.key){
+        case "Escape":
+            menu.toggle();
+            break;
         case "Down": // IE/Edge specific value
         case "ArrowDown":
             if(movY !== 1){
@@ -118,16 +141,6 @@ window.addEventListener("keyup", e => {
             break;
     }
 });
-
-const painter = new Painter(app)
-    .setMap(map)
-    .centerCameraOn(client)
-    .setDefaultPlayerTexture(playerTexture)
-    .setDefaultProjectileTexture(projectileTexture)
-    .setPlayers(players)
-    .setProjectiles(projectiles)
-    .setMessages(messages)
-    .draw();
 
 app.stage.interactive = true;
 

@@ -3,7 +3,6 @@ export class Painter{
         this.app = pixiApp;
         this.app.renderer.backgroundColor = 0x23395D;
         document.getElementById("gameContainer").appendChild(this.app.view);
-        this.graphics = PIXI.Graphics;
         this.stage = new PIXI.Container();
         this.app.stage.addChild(this.stage);
         this.cameraCenter = {
@@ -205,5 +204,15 @@ export class Painter{
 
         this.stage.position.x = x;
         this.stage.position.y = y;
+    }
+
+    // returns width of the screen
+    width(){
+        return this.app.screen.width;
+    }
+
+    // returns height of the screen
+    height(){
+        return this.app.screen.height;
     }
 };
