@@ -1,4 +1,4 @@
-﻿namespace BrowserGameBackend.Dtos
+﻿namespace BrowserGame.Dtos
 {
     public class GameListElement
     {

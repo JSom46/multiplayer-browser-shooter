@@ -1,6 +1,6 @@
 class Button{
     constructor(){
-        this.graphics = new PIXI.Graphics();
+        this.bg = new PIXI.Graphics();
         this.button = new PIXI.Container();
         return this;
     }
@@ -23,19 +23,19 @@ class Button{
     }
 
     addToStage(stage){
-        this.graphics.beginFill(0xFFFFFF);
-        this.graphics.alpha = 0.7;
-        this.graphics.drawRect(0, 0, this.width, this.height);
+        this.bg.beginFill(0xFFFFFF);
+        this.bg.alpha = 0.7;
+        this.bg.drawRect(0, 0, this.width, this.height);
 
-        this.button.addChild(this.graphics);
+        this.button.addChild(this.bg);
         this.button.addChild(new PIXI.Text(this.text));
 
         this.button.on('mouseover', () => {
-            this.graphics.alpha = 1;
+            this.bg.alpha = 1;
         });
 
         this.button.on('mouseout', () => {
-            this.graphics.alpha = 0.7;
+            this.bg.alpha = 0.7;
         });
         
         stage.addChild(this.button);
@@ -59,7 +59,7 @@ class Button{
 
 export class Menu{
     constructor(){
-        this.graphics = new PIXI.Graphics();
+        this.bg = new PIXI.Graphics();
         this.container = new PIXI.Container();
         this.buttons = [];
         this.bgColor = 0x1E1E1E;
@@ -97,11 +97,11 @@ export class Menu{
     }
 
     addToStage(stage){
-        this.graphics.beginFill(this.bgColor);
+        this.bg.beginFill(this.bgColor);
         this.parent = stage;
 
-        this.graphics.drawRect(0, 0, this.width, this.height);
-        this.container.addChild(this.graphics);
+        this.bg.drawRect(0, 0, this.width, this.height);
+        this.container.addChild(this.bg);
 
         this.buttons.forEach((b, idx) => {
             b.setPosition(15, 15 + 60 * idx).addToStage(this.container);

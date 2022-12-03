@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
-using BrowserGameBackend.Models;
+using BrowserGame.Models;
 
-namespace BrowserGameBackend.Data
+namespace BrowserGame.Data
 {
     public class MapData : IMapData
     {

@@ -1,4 +1,4 @@
-﻿namespace BrowserGameBackend.Models
+﻿namespace BrowserGame.Models
 {
     public class PlayerModel
     {

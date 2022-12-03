@@ -1,6 +1,6 @@
-﻿using BrowserGameBackend.Models;
+﻿using BrowserGame.Models;
 
-namespace BrowserGameBackend.Dtos
+namespace BrowserGame.Dtos
 {
     public class FullGameState
     {

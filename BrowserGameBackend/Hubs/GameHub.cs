@@ -1,9 +1,9 @@
-﻿using BrowserGameBackend.Data;
-using BrowserGameBackend.Dtos;
-using BrowserGameBackend.Models;
+﻿using BrowserGame.Data;
+using BrowserGame.Dtos;
+using BrowserGame.Models;
 using Microsoft.AspNetCore.SignalR;
 
-namespace BrowserGameBackend.Hubs
+namespace BrowserGame.Hubs
 {
     public class GameHub : Hub
     {

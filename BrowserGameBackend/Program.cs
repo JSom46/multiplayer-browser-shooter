@@ -1,6 +1,6 @@
-using BrowserGameBackend;
-using BrowserGameBackend.Data;
-using BrowserGameBackend.Hubs;
+using BrowserGame;
+using BrowserGame.Data;
+using BrowserGame.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 

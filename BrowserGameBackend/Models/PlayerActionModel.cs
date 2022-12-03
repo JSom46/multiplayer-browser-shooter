@@ -1,4 +1,4 @@
-﻿namespace BrowserGameBackend.Models
+﻿namespace BrowserGame.Models
 {
     /// <summary>
     /// Stores information about player's action or movement

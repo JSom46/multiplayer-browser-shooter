@@ -1,6 +1,6 @@
-﻿using BrowserGameBackend.Dtos;
+﻿using BrowserGame.Dtos;
 
-namespace BrowserGameBackend.Hubs
+namespace BrowserGame.Hubs
 {
     public interface IGameClient
     {

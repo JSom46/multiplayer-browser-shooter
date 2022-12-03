@@ -1,9 +1,9 @@
-﻿using BrowserGameBackend.Data;
-using BrowserGameBackend.Dtos;
-using BrowserGameBackend.Models;
+﻿using BrowserGame.Data;
+using BrowserGame.Dtos;
+using BrowserGame.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BrowserGameBackend.Controllers
+namespace BrowserGame.Controllers
 {
     [ApiController]
     [Route("map")]

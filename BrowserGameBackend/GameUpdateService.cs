@@ -1,10 +1,10 @@
-﻿using BrowserGameBackend.Data;
-using BrowserGameBackend.Dtos;
-using BrowserGameBackend.Hubs;
-using BrowserGameBackend.Models;
+﻿using BrowserGame.Data;
+using BrowserGame.Dtos;
+using BrowserGame.Hubs;
+using BrowserGame.Models;
 using Microsoft.AspNetCore.SignalR;
 
-namespace BrowserGameBackend
+namespace BrowserGame
 {
     public class GameUpdateService : BackgroundService
     {

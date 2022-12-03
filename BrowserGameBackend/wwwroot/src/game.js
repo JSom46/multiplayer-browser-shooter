@@ -7,6 +7,7 @@ import { Projectile } from "./game/projectile.js";
 import { Connection } from "./game/connection.js";
 import { vectorAngle, movementDirection } from "./game/utils.js";
 import { Menu } from './game/menu.js';
+import { Scoreboard } from "./game/scoreboard.js";
 
 const params = new URLSearchParams(window.location.search);
 
@@ -78,13 +79,29 @@ const menu = new Menu()
     })
     .addToStage(painter.app.stage);
 
-console.log(menu);
+const scoreboard = new Scoreboard()
+    .setPlayers(players)
+    .setPosition(painter.width() * 0.2, painter.height() * 0.25)
+    .setDimensions(painter.width() * 0.6, painter.height() * 0.65);
 
 let movX = 0;
 let movY = 0;
 
+window.addEventListener("keyup", e => {
+    switch(e.key){
+        case "`":
+            scoreboard.deleteFromStage(painter.app.stage);
+            break;
+    }
+});
+
 window.addEventListener("keydown", e => {
     switch(e.key){
+        case "`":
+            if(menu.visible === false){
+                scoreboard.addToStage(painter.app.stage);
+            }
+            break;
         case "Escape":
             menu.toggle();
             break;

@@ -1,4 +1,4 @@
-﻿namespace BrowserGameBackend.Models
+﻿namespace BrowserGame.Models
 {
     /// <summary>
     /// Stores deserialized data from .json file that contains map made in Tiled.

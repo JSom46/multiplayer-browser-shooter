@@ -1,6 +1,6 @@
-﻿using BrowserGameBackend.Models;
+﻿using BrowserGame.Models;
 
-namespace BrowserGameBackend.Data;
+namespace BrowserGame.Data;
 
 public interface IGameData
 {
