@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BrowserGameBackend", "BrowserGameBackend\BrowserGameBackend.csproj", "{BB7DC79C-A446-4885-B5B1-2A6D30627753}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccess", "DataAccess\DataAccess.csproj", "{E3EE9C40-8630-487C-A218-45BB8A968C29}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BrowserGame", "BrowserGameBackend\BrowserGame.csproj", "{BB7DC79C-A446-4885-B5B1-2A6D30627753}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
