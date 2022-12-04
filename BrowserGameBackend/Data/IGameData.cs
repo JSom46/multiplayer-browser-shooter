@@ -4,7 +4,7 @@ namespace BrowserGame.Data;
 
 public interface IGameData
 {
-    List<GameModel> GetAll();
+    SynchronizedCollection<GameModel> GetAll();
 
     /// <param name="id"></param>
     /// <returns>Return game with specified id or null, if such game does not exist</returns>

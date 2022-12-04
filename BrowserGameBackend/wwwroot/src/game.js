@@ -2,12 +2,11 @@
 
 import { Loader } from "./game/loader.js";
 import { Painter } from "./game/painter.js";
-import { Player } from "./game/player.js";
-import { Projectile } from "./game/projectile.js";
 import { Connection } from "./game/connection.js";
 import { vectorAngle, movementDirection } from "./game/utils.js";
 import { Menu } from './game/menu.js';
 import { Scoreboard } from "./game/scoreboard.js";
+import { Message } from "./game/message.js";
 
 const params = new URLSearchParams(window.location.search);
 
@@ -26,6 +25,8 @@ const projectiles = [];
 
 // array of messages shown
 const messages = [];
+messages.push(new Message('Press ` to view scoreboard.', 10000));
+messages.push(new Message('Press ESC to open menu', 10000));
 
 // connection with signalr server
 const con = new Connection("gamehub")

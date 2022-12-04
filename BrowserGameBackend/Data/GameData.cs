@@ -4,13 +4,13 @@ namespace BrowserGame.Data
 {
     public class GameData : IGameData
     {
-        private List<GameModel> Games;
+        private SynchronizedCollection<GameModel> Games;
         private Dictionary<string, GameModel> PlayerIdGame;
         private Dictionary<string, PlayerModel> PlayerIdPlayer;
 
         public GameData()
         {
-            Games = new List<GameModel>();
+            Games = new SynchronizedCollection<GameModel>();
             PlayerIdGame = new Dictionary<string, GameModel>();
             PlayerIdPlayer = new Dictionary<string, PlayerModel>();
 
@@ -43,7 +43,7 @@ namespace BrowserGame.Data
             }, game.Id);
         }
 
-        public List<GameModel> GetAll()
+        public SynchronizedCollection<GameModel> GetAll()
         {
             return Games;
         }
@@ -78,7 +78,7 @@ namespace BrowserGame.Data
         /// <returns>true on success, false otherwise</returns>
         public bool AddGame(GameModel game)
         {
-            if (Games.Exists(g => g.Id == game.Id))
+            if (Games.FirstOrDefault(g => g.Id == game.Id) != null)
             {
                 return false;
             }
@@ -171,7 +171,7 @@ namespace BrowserGame.Data
                 return -4;
             }
 
-            if (game.Players.RemoveAll(p => p.Id == playerId) == 0)
+            if (!game.Players.Remove(game.Players.First(p => p.Id == playerId)))
             {
                 return -5;
             }

@@ -5,10 +5,10 @@ import { Message } from "./message.js";
 export class Connection{
     constructor(url){
         this.con = new signalR.HubConnectionBuilder()
-        .withUrl(`/${url}`)
-        /*.withHubProtocol(new MessagePackHubProtocol)*/
-        .configureLogging(signalR.LogLevel.Information)
-        .build();
+            .withUrl(`/${url}`)
+            /*.withHubProtocol(new MessagePackHubProtocol)*/
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
 
         this.con.onclose(async () => {
             await this.start();
