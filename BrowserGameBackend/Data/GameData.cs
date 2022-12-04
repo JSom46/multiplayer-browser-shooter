@@ -13,34 +13,6 @@ namespace BrowserGame.Data
             Games = new SynchronizedCollection<GameModel>();
             PlayerIdGame = new Dictionary<string, GameModel>();
             PlayerIdPlayer = new Dictionary<string, PlayerModel>();
-
-            var game = new GameModel()
-            {
-                Id = Guid.NewGuid(),
-                MapName = "map1",
-                MaxPlayers = 69,
-                Name = "ultimate game of absolute destruction"
-            };
-
-            game.Projectiles.Add(new ProjectileModel()
-            {
-                Id = game.NextProjectileId++,
-                PId = "xd",
-                SX = 0.3,
-                SY = 0.4,
-                X = 0,
-                Y = 0
-            });
-
-            this.AddGame(game);
-            this.AddPlayer(new PlayerModel()
-            {
-                Id = "xd",
-                X = 69.69,
-                Y = 21.37,
-                Name = "dominator",
-                LastStateUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-            }, game.Id);
         }
 
         public SynchronizedCollection<GameModel> GetAll()
