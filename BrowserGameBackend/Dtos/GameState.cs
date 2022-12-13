@@ -13,7 +13,6 @@ namespace BrowserGame.Dtos
     {
         public IEnumerable<PlayerState> Players { get; set; }
         public IEnumerable<ProjectileModel> NewProjectiles { get; set; }
-        public IEnumerable<int> DeletedProjectiles { get; set; }
         public long TimeStamp { get; set; }
     }
 }

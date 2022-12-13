@@ -1,6 +1,7 @@
 ﻿using BrowserGame.Data;
 using BrowserGame.Dtos;
 using BrowserGame.Models;
+using BrowserGame.Utils;
 using Microsoft.AspNetCore.SignalR;
 
 namespace BrowserGame.Hubs
@@ -14,11 +15,6 @@ namespace BrowserGame.Hubs
         {
             _maps = maps;
             _games = games;
-        }
-
-        public override Task OnConnectedAsync()
-        {
-            return base.OnConnectedAsync();
         }
 
         public override async Task<Task> OnDisconnectedAsync(Exception? exception)
@@ -46,7 +42,8 @@ namespace BrowserGame.Hubs
         public async Task CreateRoom(CreateGameData data)
         {
             // check if specified map exists
-            if (_maps.GetByName(data.Map) == null)
+            var map = _maps.GetByName(data.Map);
+            if (map == null)
             {
                 await Clients.Caller.SendAsync("createError");
                 return;
@@ -63,15 +60,20 @@ namespace BrowserGame.Hubs
             };
             _games.AddGame(game);
 
-            // add player to his game
-            _games.AddPlayer(new PlayerModel()
+            var player = new PlayerModel()
             {
                 Id = Context.ConnectionId,
                 Name = data.PlayerName,
                 X = 0,
                 Y = 0,
                 LastStateUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
-            }, gameId);
+            };
+
+            // set player's position
+            PlayerPositioner.RandomPlayerPosition(player, map);
+
+            // add player to players' list
+            _games.AddPlayer(player, gameId);
 
             // create game's group and add player to it
             await Groups.AddToGroupAsync(Context.ConnectionId, game.Id.ToString());
@@ -132,7 +134,9 @@ namespace BrowserGame.Hubs
                 return;
             }
 
-            // create player object and add it to players' list
+            // get map's model
+            var map = _maps.GetByName(game.MapName);
+
             var player = new PlayerModel()
             {
                 Id = Context.ConnectionId,
@@ -141,6 +145,11 @@ namespace BrowserGame.Hubs
                 Y = 0,
                 LastStateUpdate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             };
+
+            // set player's initial position
+            PlayerPositioner.RandomPlayerPosition(player, map);
+
+            // add player to players' list
             _games.AddPlayer(player, gameId);
 
             // inform other players about new player

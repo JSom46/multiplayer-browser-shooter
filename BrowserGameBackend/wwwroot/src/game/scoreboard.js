@@ -62,6 +62,7 @@ class Row{
         })
 
         stage.addChild(this.row);
+        this.isAdded = true;
 
         return this;
     }
@@ -73,6 +74,7 @@ export class Scoreboard{
         this.container = new PIXI.Container();
         this.bgColor = 0x1E1E1E;
         this.rows = [];
+        this.isAdded = false;
 
         return this;
     }
@@ -98,6 +100,10 @@ export class Scoreboard{
     }
 
     addToStage(stage){
+        if(this.isAdded === true){
+            return this;
+        }
+
         this.bg.beginFill(this.bgColor);
         this.parent = stage;
 
@@ -121,12 +127,19 @@ export class Scoreboard{
 
         stage.addChild(this.container);
 
+        this.isAdded = true;
+
         return this;
     }
 
     deleteFromStage(stage){
+        if(this.isAdded === false){
+            return this;
+        }
         deleteAllChildren(this.container);
         stage.removeChild(this.container);
+
+        this.isAdded = false;
 
         return this;
     }
