@@ -12,7 +12,7 @@ namespace BrowserGame.Data
             Maps = new Dictionary<string, MapModel>();
 
             // iterate through every .json file in Maps directory and, if it contains valid map data, add it to Maps list
-            foreach (string file in Directory.EnumerateFiles(Directory.GetCurrentDirectory() + "\\GameFiles\\Maps", "*.json"))
+            foreach (string file in Directory.EnumerateFiles(Directory.GetCurrentDirectory() + "\\wwwroot\\assets\\maps", "*.json"))
             {
                 using (var r = new StreamReader(file))
                 {
