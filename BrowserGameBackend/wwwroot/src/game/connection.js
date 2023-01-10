@@ -86,7 +86,7 @@ export class Connection{
 
     async joinGame(gameId, playerName){
         return new Promise((resolve, reject) => {
-            this.con.on("gameJoined", state => {    
+            this.con.on("GameJoined", state => {    
                 state.players.forEach(p => {
                     this.players.push(new Player(p));
                 });
@@ -97,15 +97,15 @@ export class Connection{
 
                 this.client = this.players.find(p => p.id === this.con.connectionId);
 
-                this.con.on("serverTick", this.handleTick);
-                this.con.on("playerJoined", this.handlePlayerJoin);
-                this.con.on("playerLeft", this.handlePlayerLeave);
-                this.con.on("playerKilled", this.handlePlayerKilled);
+                this.con.on("ServerTick", this.handleTick);
+                this.con.on("PlayerJoined", this.handlePlayerJoin);
+                this.con.on("PlayerLeft", this.handlePlayerLeave);
+                this.con.on("PlayerKilled", this.handlePlayerKilled);
 
                 resolve();
             });
 
-            this.con.on("joinError", () => {
+            this.con.on("JoinError", () => {
                 document.getElementById("gameContainer").innerHTML = "<p>Could not join game.</p>";
                 setTimeout(() => {
                     document.location.href = "/join.html";
@@ -121,7 +121,7 @@ export class Connection{
 
     async createGame(playerName, gameName, map){
         return new Promise((resolve, reject) => {
-            this.con.on("gameJoined", state => {    
+            this.con.on("GameJoined", state => {    
                 state.players.forEach(p => {
                     this.players.push(new Player(p));
                 });
@@ -132,15 +132,15 @@ export class Connection{
 
                 this.client = this.players.find(p => p.id === this.con.connectionId);
 
-                this.con.on("serverTick", this.handleTick);
-                this.con.on("playerJoined", this.handlePlayerJoin);
-                this.con.on("playerLeft", this.handlePlayerLeave);
-                this.con.on("playerKilled", this.handlePlayerKilled);
+                this.con.on("ServerTick", this.handleTick);
+                this.con.on("PlayerJoined", this.handlePlayerJoin);
+                this.con.on("PlayerLeft", this.handlePlayerLeave);
+                this.con.on("PlayerKilled", this.handlePlayerKilled);
 
                 resolve();
             });
 
-            this.con.on("createError", () => {
+            this.con.on("CreateError", () => {
                 document.getElementById("gameContainer").innerHTML = "<p>Could not create game.</p>";
                 setTimeout(() => {
                     document.location.href = "/create.html";
