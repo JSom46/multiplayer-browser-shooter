@@ -1,10 +1,9 @@
 ﻿using BrowserGame.Models;
 
-namespace BrowserGame.Data
+namespace BrowserGame.Data;
+
+public interface IMapData
 {
-    public interface IMapData
-    {
-        MapModel? GetByName(string name);
-        IEnumerable<MapModel> GetAll();
-    }
+    MapModel? GetByName(string name);
+    IEnumerable<MapModel> GetAll();
 }

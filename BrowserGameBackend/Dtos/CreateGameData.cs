@@ -1,9 +1,8 @@
-﻿namespace BrowserGame.Dtos
+﻿namespace BrowserGame.Dtos;
+
+public class CreateGameData
 {
-    public class CreateGameData
-    {
-        public string PlayerName { get; set; }
-        public string GameName { get; set; }
-        public string Map { get; set; }
-    }
+    public string PlayerName { get; set; }
+    public string GameName { get; set; }
+    public string Map { get; set; }
 }

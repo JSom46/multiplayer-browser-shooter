@@ -1,6 +1,7 @@
 using BrowserGame;
 using BrowserGame.Data;
 using BrowserGame.Hubs;
+using BrowserGame.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +11,15 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSignalR()/*.AddMessagePackProtocol()*/;
+builder.Services.AddSignalR() /*.AddMessagePackProtocol()*/;
+
+builder.Services.AddTransient<IMapLoader, MapLoader>();
 
 builder.Services.AddSingleton<IMapData, MapData>();
 
 builder.Services.AddSingleton<IGameData, GameData>();
+
+builder.Services.AddSingleton<IPlayerPositioner, PlayerPositioner>();
 
 builder.Services.AddHostedService<GameUpdateService>();
 
