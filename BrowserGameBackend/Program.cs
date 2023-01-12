@@ -13,8 +13,6 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR() /*.AddMessagePackProtocol()*/;
 
-builder.Services.AddTransient<IMapLoader, MapLoader>();
-
 builder.Services.AddSingleton<IMapData, MapData>();
 
 builder.Services.AddSingleton<IGameData, GameData>();
