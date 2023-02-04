@@ -117,7 +117,8 @@ export class Scoreboard{
             .setValues('Player name', 'Kills', 'Deaths')
             .addToStage(this.container);
 
-        this.players.forEach((p, idx) => {
+        const sortedPlayers = [...this.players].sort((a, b) => b.kills - a.kills)
+        sortedPlayers.forEach((p, idx) => {
             new Row().setBgColor(idx % 2 === 0 ? 0x282828 : 0x1E1E1E)
                 .setDimensions(this.width, 20)
                 .setPosition(0, 40 + idx * 20)

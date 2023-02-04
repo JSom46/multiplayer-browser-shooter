@@ -34,7 +34,7 @@ innerHTML += `
 // form for getting player's name
 innerHTML += `
             <input type="text" id="playerName" name="playerName" placeholder="your name"/>
-            <input type="submit" value="create game" id="joinGame" disabled/>
+            <input type="submit" value="join game" id="joinGame" disabled/>
             `;
 
 document.getElementById("menuContainer").innerHTML = innerHTML;
