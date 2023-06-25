@@ -13,7 +13,7 @@ public class MapData : IMapData
     {
         _maps = new Dictionary<string, MapModel>();
 
-        foreach (var file in Directory.EnumerateFiles($"{Directory.GetCurrentDirectory()}\\wwwroot\\assets\\maps", "*.json"))
+        foreach (var file in Directory.EnumerateFiles(Path.Join(Directory.GetCurrentDirectory(), "wwwroot", "assets", "maps"), "*.json"))
         {
             using var r = new StreamReader(file);
             try
